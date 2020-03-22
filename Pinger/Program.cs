@@ -39,47 +39,13 @@ namespace Pinger
                 .BuildServiceProvider();
 
 
-            //var icmpPinger = serviceProvider.GetRequiredService<IcmpPinger>();
-            //icmpPinger.CheckStatus();
-
-            var httpPinger = serviceProvider.GetRequiredService<HttpPinger>();
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-
-            logger.LogInformation("Start");
-            
+            //logger.LogInformation("Start");
+           
+            var httpPinger = serviceProvider.GetRequiredService<HttpPinger>();
             var message = httpPinger.CheckStatus();
+            
             logger.LogInformation(message);
-            logger.LogInformation("Stop");
-            
-            
-            //var tcpPinger = serviceProvider.GetRequiredService<TcpPinger>();
-            //tcpPinger.CheckStatus();
         }
-
-        //private static void ConfigureServices(IServiceCollection serviceCollection)
-        //{
-        //    var configuration = new ConfigurationBuilder()
-        //        .SetBasePath(Directory.GetCurrentDirectory())
-        //        .AddJsonFile("appsettings.json", false)
-        //        .Build();
-        //    // Add access to generic IConfigurationRoot
-        //    serviceCollection.AddSingleton(configuration);
-
-        //    serviceCollection.AddLogging(loggingBuilder =>
-        //    {
-        //        loggingBuilder.AddConsole();
-        //    });
-
-        //    // Add services
-        //    serviceCollection.AddTransient<Test>();
-        //    serviceCollection.AddSingleton<HttpClient>();
-        //    serviceCollection.AddTransient<HttpRequestMessage>();
-        //    serviceCollection.AddTransient(s => HttpMethod.Head);
-        //    serviceCollection.AddTransient(s => new Uri("https://translate.google.com"));
-        //    serviceCollection.AddTransient<Ping>();
-        //    serviceCollection.AddTransient<HttpPinger>();
-        //    serviceCollection.AddTransient<IcmpPinger>()
-        //        .BuildServiceProvider();
-        //}
     }
 }

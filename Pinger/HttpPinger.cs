@@ -27,7 +27,7 @@ namespace Pinger
         {
             _httpRequestMessage.RequestUri = _uriBuilder.Uri;
             _httpRequestMessage.Method = HttpMethod.Head;
-            var message = String.Empty;
+            var message = string.Empty;
 
             TypeInfo requestType = _httpRequestMessage.GetType().GetTypeInfo();
 
