@@ -8,13 +8,14 @@ using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Pinger.Models;
 
 namespace Pinger
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", false)
@@ -23,7 +24,7 @@ namespace Pinger
             var settings = configuration.Build();
 
             var serviceProvider = new ServiceCollection()
-                .AddLogging(configure => configure.AddConsole())
+                .AddTransient<Logger>()
                 .AddTransient<HttpPinger>()
                 .AddTransient<IcmpPinger>()
                 .AddTransient<HttpRequestMessage>()
@@ -36,16 +37,34 @@ namespace Pinger
                 .AddTransient<TcpPinger>()
                 .AddSingleton<Settings>()
                 .AddSingleton<IConfiguration>(provider => settings)
+                .AddLogging(configure => configure.AddConsole())
                 .BuildServiceProvider();
 
 
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            //logger.LogInformation("Start");
-           
+            var setting = serviceProvider.GetRequiredService<Settings>();
+
             var httpPinger = serviceProvider.GetRequiredService<HttpPinger>();
-            var message = httpPinger.CheckStatus();
+            var icmpPinger = serviceProvider.GetRequiredService<IcmpPinger>();
             
-            logger.LogInformation(message);
+            logger.LogInformation("Application start");
+
+            while (true)
+            {
+                try
+                {
+                    httpPinger.CheckStatus();
+                    Thread.Sleep(setting.Period * 1000);
+                    icmpPinger.CheckStatus();
+                    Thread.Sleep(setting.Period * 1000);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                    return;
+                }
+            }
+
         }
     }
 }

@@ -8,15 +8,15 @@ using System.Text;
 
 namespace Pinger
 {
-    class TcpPinger
+    internal class TcpPinger : IPinger
     {
-        private readonly TcpClient tcpClient;
-        private readonly Settings settings;
+        private readonly TcpClient _tcpClient;
+        private readonly Settings _settings;
 
         public TcpPinger(TcpClient tcpClient, Settings settings)
         {
-            this.tcpClient = tcpClient;
-            this.settings = settings;
+            this._tcpClient = tcpClient;
+            this._settings = settings;
         }
 
         //public void CheckStatus()
@@ -48,21 +48,21 @@ namespace Pinger
 
         public void CheckStatus()
         {
-            var server = settings.Host;
-            var port = settings.Port;
+            var server = _settings.Host;
+            var port = _settings.Port;
 
             try
             {
-                TcpClient client = new TcpClient();
+                var client = new TcpClient();
                 client.Connect(server, port);
 
-                byte[] data = new byte[256];
-                StringBuilder response = new StringBuilder();
-                NetworkStream stream = client.GetStream();
+                var data = new byte[256];
+                var response = new StringBuilder();
+                var stream = client.GetStream();
 
                 do
                 {
-                    int bytes = stream.Read(data, 0, data.Length);
+                    var bytes = stream.Read(data, 0, data.Length);
                     response.Append(Encoding.UTF8.GetString(data, 0, bytes));
                 }
                 while (stream.DataAvailable); // пока данные есть в потоке

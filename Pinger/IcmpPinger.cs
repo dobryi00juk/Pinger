@@ -9,46 +9,44 @@ using System.Threading;
 
 namespace Pinger
 {
-    class IcmpPinger : IPinger
+    internal class IcmpPinger : IPinger
     {
-        private readonly Ping ping;
-        private readonly ILogger logger;
-        private readonly Settings settings;
-        private readonly UriBuilder uriBuilder;
+        private readonly Ping _ping;
+        private readonly Logger _logger;
+        private readonly Settings _settings;
+        private readonly UriBuilder _uriBuilder;
 
-        public IcmpPinger(Ping ping, ILogger<IcmpPinger> logger, Settings settings, UriBuilder uriBuilder)
+        public IcmpPinger(Ping ping, Logger logger, Settings settings, UriBuilder uriBuilder)
         {
-            this.ping = ping;
-            this.logger = logger;
-            this.settings = settings;
-            this.uriBuilder = uriBuilder;
+            _ping = ping;
+            _logger = logger;
+            _settings = settings;
+            _uriBuilder = uriBuilder;
         }
 
         public void CheckStatus()
         {
-            string host = uriBuilder.Host;
-
+            var host = "www." + _uriBuilder.Host;
+            
             try
             {
-                PingReply request = ping.Send(host);
-                //string message = DateTime.Now + " | " + host.Normalize() + " | " + request.Status.ToString();
-                Console.WriteLine(DateTime.Now + " | " + host.Normalize() + " | " + request.Status.ToString());
+                PingReply request = _ping.Send(host);
+                var message = DateTime.Now + " | " + host.Normalize() + " | " + request.Status.ToString();
 
-                //logger.LogInformation(message.ToUpper());
-                
+                _logger.LogToFileAndConsole(message);
+
             }
             catch (UriFormatException ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogToFileAndConsole(DateTime.Now + "|" + this.GetType() + "|" + ex.Message);
             }
             catch (PingException ex)
             {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine("wrong URL!!!");
+                _logger.LogToFileAndConsole(DateTime.Now + "|" + this.GetType() + "|" + ex.Message + "( Incorrect ulr?)");
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogToFileAndConsole(DateTime.Now + "|" + this.GetType() + "|" + ex.Message);
             }
         }
     }
