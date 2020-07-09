@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Pinger.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace Pinger
 {
-    public class Logger
+    public class Logger : ILogger
     {
         public void LogToConsole(string message)
         {

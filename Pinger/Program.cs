@@ -1,15 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using Pinger.Models;
+using PingerLib;
 
 namespace Pinger
 {
@@ -17,54 +12,62 @@ namespace Pinger
     {
         private static void Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", false)
-                .SetBasePath(Directory.GetCurrentDirectory());
-
-            var settings = configuration.Build();
-
-            var serviceProvider = new ServiceCollection()
-                .AddTransient<Logger>()
-                .AddTransient<HttpPinger>()
-                .AddTransient<IcmpPinger>()
-                .AddTransient<HttpRequestMessage>()
-                .AddScoped<HttpClient>()
-                .AddScoped<TcpClient>()
-                .AddTransient(s => new UriBuilder(settings["Host"]))
-                .AddTransient(s => HttpMethod.Head)
-                .AddTransient<Ping>()
-                .AddTransient<Test>()
-                .AddTransient<TcpPinger>()
-                .AddSingleton<Settings>()
-                .AddSingleton<IConfiguration>(provider => settings)
-                .AddLogging(configure => configure.AddConsole())
-                .BuildServiceProvider();
-
-
-            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            var setting = serviceProvider.GetRequiredService<Settings>();
-
-            var httpPinger = serviceProvider.GetRequiredService<HttpPinger>();
-            var icmpPinger = serviceProvider.GetRequiredService<IcmpPinger>();
+            var services = ConfigureServices();
+            var serviceProvider = services.BuildServiceProvider();
             
-            logger.LogInformation("Application start");
+            var logger = serviceProvider.GetService<ILogger>();
+            var icmpPinger = serviceProvider.GetService<IcmpPinger>();
+            var tcpPinger = serviceProvider.GetService<TcpPinger>();
+            var protocol = serviceProvider.GetService<ISettings>().Protocol;
+            var htmlPinger = serviceProvider.GetService<HttpPinger>();
 
-            while (true)
-            {
-                try
-                {
-                    httpPinger.CheckStatus();
-                    Thread.Sleep(setting.Period * 1000);
-                    icmpPinger.CheckStatus();
-                    Thread.Sleep(setting.Period * 1000);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex.Message);
-                    return;
-                }
-            }
+            icmpPinger.Notify += logger.LogToFileAndConsole;
+            icmpPinger.CheckStatus();
+            //switch (protocol)
+            //{
+            //    case "http":
+            //        //logger.LogToConsole("HTTP"); 
+            //        logger.LogToFileAndConsole(htmlPinger.CheckStatus());
+            //        break;
 
+            //    case "icmp":
+            //        //logger.LogToConsole("ICMP");
+            //        logger.LogToFileAndConsole(icmpPinger.CheckStatus());
+            //        break;
+
+            //    case "tcp":
+            //        //logger.LogToConsole("TCP");
+            //        logger.LogToFileAndConsole(tcpPinger.CheckStatus());
+            //        break;
+            //}
+        }
+
+        private static IServiceCollection ConfigureServices()
+        {
+            var configuration = LoadConfiguration();
+
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(configuration);
+            serviceCollection.AddTransient<HttpPinger>();
+            serviceCollection.AddSingleton<ISettings, Settings>();
+            serviceCollection.AddTransient<IcmpPinger>();
+            serviceCollection.AddTransient<TcpPinger>();
+            serviceCollection.AddTransient<HttpRequestMessage>();
+            serviceCollection.AddScoped<HttpClient>();
+            serviceCollection.AddScoped<TcpClient>();
+            serviceCollection.AddTransient<Ping>();
+            serviceCollection.AddTransient<ILogger, Logger>();
+
+            return serviceCollection;
+        }
+
+        private static IConfiguration LoadConfiguration()
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", false, true);
+
+            return configuration.Build();
         }
     }
 }
