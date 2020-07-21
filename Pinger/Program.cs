@@ -24,6 +24,7 @@ namespace Pinger
 
             var host = ConfigurationManager.AppSettings["Host"];
             Console.WriteLine(host);
+            Console.WriteLine(123123123);
             
             //var logger = serviceProvider.GetService<ILogger>();
             //var icmpPinger = serviceProvider.GetService<IcmpPinger>();
