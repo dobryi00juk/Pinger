@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pinger", "Pinger\Pinger.csproj", "{07F52192-62E4-460D-BE0C-1674D5C0C2C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingerLib", "PingerLib\PingerLib.csproj", "{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PingerLib", "PingerLib\PingerLib.csproj", "{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingerLibTests", "PingerLibTests\PingerLibTests.csproj", "{FAC5EB16-4BCB-4131-AA2E-6602FA7C460E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAC5EB16-4BCB-4131-AA2E-6602FA7C460E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAC5EB16-4BCB-4131-AA2E-6602FA7C460E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAC5EB16-4BCB-4131-AA2E-6602FA7C460E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAC5EB16-4BCB-4131-AA2E-6602FA7C460E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

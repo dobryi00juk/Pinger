@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Pinger.Interfaces
+﻿namespace PingerLib.Interfaces
 {
-    interface ISettings
+    public interface ISettings
     {
         public string Host { get; }
         public int Period { get; }

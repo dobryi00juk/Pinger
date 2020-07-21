@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Pinger.Interfaces
+﻿namespace PingerLib.Interfaces
 {
-    interface ILogger
+    public interface ILogger
     {
         void LogToConsole(string message);
         void LogToFile(string message);

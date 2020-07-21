@@ -1,44 +1,54 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PingerLib;
+using Pinger.Configuration;
+using System;
+using System.Configuration;
+using PingerLib.Domain;
+using PingerLib.Interfaces;
 
 namespace Pinger
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
+
+            var host = ConfigurationManager.AppSettings["Host"];
+            Console.WriteLine(host);
             
-            var logger = serviceProvider.GetService<ILogger>();
-            var icmpPinger = serviceProvider.GetService<IcmpPinger>();
-            var tcpPinger = serviceProvider.GetService<TcpPinger>();
-            var protocol = serviceProvider.GetService<ISettings>().Protocol;
-            var htmlPinger = serviceProvider.GetService<HttpPinger>();
+            //var logger = serviceProvider.GetService<ILogger>();
+            //var icmpPinger = serviceProvider.GetService<IcmpPinger>();
+            //var tcpPinger = serviceProvider.GetService<IcmpPinger>();
+            //var period = serviceProvider.GetService<ISettings>().Period;
+            //var htmlPinger = serviceProvider.GetService<HttpPinger>();
 
-            icmpPinger.Notify += logger.LogToFileAndConsole;
-            icmpPinger.CheckStatus();
-            //switch (protocol)
+            //icmpPinger.ChangeStatus += logger.LogToFileAndConsole;
+            //htmlPinger.ChangeStatus += logger.LogToFileAndConsole;
+            //tcpPinger.ChangeStatus += logger.LogToFileAndConsole;
+            
+            //while (true)
             //{
-            //    case "http":
-            //        //logger.LogToConsole("HTTP"); 
-            //        logger.LogToFileAndConsole(htmlPinger.CheckStatus());
-            //        break;
-
-            //    case "icmp":
-            //        //logger.LogToConsole("ICMP");
-            //        logger.LogToFileAndConsole(icmpPinger.CheckStatus());
-            //        break;
-
-            //    case "tcp":
-            //        //logger.LogToConsole("TCP");
-            //        logger.LogToFileAndConsole(tcpPinger.CheckStatus());
-            //        break;
+            //    try
+            //    {
+            //        await htmlPinger.CheckStatusAsync();
+            //        await icmpPinger.CheckStatusAsync();
+            //        Thread.Sleep(period);
+            //    }
+            //    catch (Exception)
+            //    {
+            //        icmpPinger.ChangeStatus -= logger.LogToFileAndConsole;
+            //        htmlPinger.ChangeStatus -= logger.LogToFileAndConsole;
+            //        tcpPinger.ChangeStatus -= logger.LogToFileAndConsole;
+            //    }
             //}
         }
 
@@ -48,10 +58,10 @@ namespace Pinger
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddTransient<HttpPinger>();
+            serviceCollection.AddTransient<HttpPing>();
             serviceCollection.AddSingleton<ISettings, Settings>();
-            serviceCollection.AddTransient<IcmpPinger>();
-            serviceCollection.AddTransient<TcpPinger>();
+            serviceCollection.AddTransient<IcmpPing>();
+            serviceCollection.AddTransient<TcpPing>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddScoped<HttpClient>();
             serviceCollection.AddScoped<TcpClient>();

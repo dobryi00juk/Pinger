@@ -1,7 +1,9 @@
-﻿namespace Pinger.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace PingerLib.Interfaces
 {
     public interface IPinger
     {
-        string CheckStatus();
+        Task<string> CheckStatusAsync();
     }
 }

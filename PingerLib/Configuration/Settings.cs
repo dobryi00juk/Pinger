@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Pinger.Interfaces;
+using System.Configuration;
+using PingerLib.Interfaces;
 
 namespace Pinger.Configuration
 {
