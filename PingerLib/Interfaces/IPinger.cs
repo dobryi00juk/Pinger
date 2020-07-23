@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace PingerLib.Interfaces
+namespace Pinger.Interfaces
 {
     public interface IPinger
     {

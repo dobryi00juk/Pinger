@@ -1,66 +1,41 @@
 ﻿using System;
 using System.Net.NetworkInformation;
 using System.Threading;
-using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 using Pinger.Configuration;
 using Pinger.Interfaces;
 
 namespace Pinger.Domain
 {
-    internal class IcmpPinger //: IPinger
+    public class IcmpPinger : IPinger
     {
+        public event Action<string> ChangeStatus;
         private readonly Ping _ping;
         private readonly ISettings _settings;
-        public IPStatus oldStatus { get; private set; }
-        public IPStatus newStatus { get; private set; }
+        private IPStatus OldStatus { get; set; }
+        private IPStatus NewStatus { get; set; }
 
         public IcmpPinger(Ping ping, ISettings settings)
         {
-            _ping = ping;
-            _settings = settings;
+            _ping = ping ?? throw new ArgumentNullException(nameof(ping));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            OldStatus = IPStatus.Unknown;
         }
 
-        public string CheckStatus()
+        public async Task<string> CheckStatusAsync()
         {
-            var count = 0;
-            oldStatus = IPStatus.Success;
+            var request = await _ping.SendPingAsync(_settings.Host, 10000) 
+                ?? throw new ArgumentNullException($"_ping.Send(host)");//? атт для файла настроек,,,
+            var message = /*"Icmp" + " | " + DateTime.Now + " | " + _settings.Host.Normalize() + " | " + */request.Status.ToString();
+            NewStatus = request.Status;
 
-            while (true)
+            if (NewStatus != OldStatus)
             {
-                var request = _ping.Send(_settings.Host) ?? throw new ArgumentNullException($"_ping.Send(host)");
-                
-                newStatus = request.Status;
-
-
-                switch (count)
-                {
-                    case 5:
-                    case 10:
-                    case 15:
-                    case 20:
-                    case 25:
-                        newStatus = IPStatus.TimedOut;
-                        break;
-                }
-
-                var message = DateTime.Now + " | " + _settings.Host.Normalize() + " | " + newStatus;//request.Status;
-
-                
-                if (newStatus != oldStatus)
-                {
-                    Notify?.Invoke(message);
-                }
-
-                oldStatus = newStatus;
-                count++;
-
-
-                //Thread.Sleep(2000);
+                ChangeStatus?.Invoke(message);
+                OldStatus = NewStatus;
             }
+
+            return message;
         }
-
-        internal delegate void ChangeHandler(string message);
-
-        public event ChangeHandler Notify;
     }
 }
