@@ -12,6 +12,8 @@ using Pinger.Domain;
 using Pinger.Interfaces;
 using System;
 using System.Configuration;
+using FluentValidation;
+using PingerLib.Configuration;
 
 namespace Pinger
 {
@@ -25,29 +27,33 @@ namespace Pinger
             var logger = serviceProvider.GetService<ILogger>();
             var icmpPinger = serviceProvider.GetService<IcmpPinger>();
             var tcpPinger = serviceProvider.GetService<TcpPinger>();
-            var period = serviceProvider.GetService<ISettings>().Period;
             var htmlPinger = serviceProvider.GetService<HttpPinger>();
 
             icmpPinger.ChangeStatus += logger.LogToFileAndConsole;
             htmlPinger.ChangeStatus += logger.LogToFileAndConsole;
             tcpPinger.ChangeStatus += logger.LogToFileAndConsole;
 
-            //var result = await tcpPinger.CheckStatusAsync();
-            //Console.WriteLine(result);
-            while (true)
+            var settings = serviceProvider.GetService<ISettings>();
+            var settingsValidator = new SettingsValidator();
+            var validationResult = settingsValidator.Validate(settings as Settings);
+            var result = validationResult;
+
+            //if (!(result == null && result.IsValid))
+            if(!result.IsValid)
             {
-                try
+                foreach (var item in result.Errors)
+                {
+                    logger.LogToFileAndConsole(item.ErrorMessage);
+                }
+            }
+            else
+            {
+                while (true)
                 {
                     await htmlPinger.CheckStatusAsync();
                     await icmpPinger.CheckStatusAsync();
                     await tcpPinger.CheckStatusAsync();
-                    Thread.Sleep(period);
-                }
-                catch (Exception)
-                {
-                    icmpPinger.ChangeStatus -= logger.LogToFileAndConsole;
-                    htmlPinger.ChangeStatus -= logger.LogToFileAndConsole;
-                    tcpPinger.ChangeStatus -= logger.LogToFileAndConsole;
+                    Thread.Sleep(settings.Period * 1000);
                 }
             }
         }
@@ -67,7 +73,6 @@ namespace Pinger
             serviceCollection.AddScoped<TcpClient>();
             serviceCollection.AddTransient<Ping>();
             serviceCollection.AddTransient<ILogger, Logger>();
-
             return serviceCollection;
         }
 

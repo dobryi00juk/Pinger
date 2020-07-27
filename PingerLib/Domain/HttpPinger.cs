@@ -26,34 +26,59 @@ namespace Pinger.Domain
             OldStatus = 0;
         }
 
-        public async Task<string> CheckStatusAsync()
+        public async Task CheckStatusAsync()
         {
-            var requestType = _httpRequestMessage.GetType().GetTypeInfo();//берем информацию о типо дял того что бы обнулить статус отправки
-            var uri = new Uri("http://" + _settings.Host);//имя хоста из файла настроек
+            
+            var uri = new Uri("http://" + _settings.Host);
 
-            //настраиваем HttpRequestMessage
             _httpRequestMessage.Method = HttpMethod.Head;
             _httpRequestMessage.RequestUri = uri;
 
-            var result = await _httpClient.SendAsync(_httpRequestMessage);//.Result.StatusCode;
-            var message = /*"Http" + " | " + DateTime.Now + " | " + _httpRequestMessage.RequestUri.DnsSafeHost + " | " +
-                     result.StatusCode.GetHashCode() + " | " + */result.StatusCode.ToString();
-            NewStatus = result.StatusCode;
-
-            if (NewStatus != OldStatus)
+            try
             {
-                ChangeStatus?.Invoke(message);
-                OldStatus = NewStatus;
-            }
+                var result = await _httpClient.SendAsync(_httpRequestMessage);
+                var message = CreateResponseMessage(result.StatusCode);
+                NewStatus = result.StatusCode;
 
-            //сбрасываем значение sendStatusField для использования Http запросов в цикле
+                if (NewStatus != OldStatus)
+                {
+                    ChangeStatus?.Invoke(message);
+                    OldStatus = NewStatus;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                ChangeStatus?.Invoke(ex.ToString());
+            }
+            catch (InvalidOperationException ex)
+            {
+                ChangeStatus?.Invoke(ex.ToString());
+            }
+            finally
+            {
+                //сбрасываем значение sendStatusField для использования Http запросов в цикле
+                ResetStatusField();
+            }
+        }
+
+        private void ResetStatusField()
+        {
+            var requestType = _httpRequestMessage.GetType().GetTypeInfo();//берем информацию о типо дял того что бы обнулить статус отправки
             var sendStatusField = requestType.GetField("_sendStatus", BindingFlags.Instance | BindingFlags.NonPublic);
 
             if (sendStatusField != null)
                 sendStatusField.SetValue(_httpRequestMessage, 0);
-
-            return message;
         }
+
+        private string CreateResponseMessage(HttpStatusCode statusCode) =>
+            "HTTP" +
+            " | " + DateTime.Now +
+            " | " + _httpRequestMessage.RequestUri.DnsSafeHost +
+            " | " + statusCode.GetHashCode() +
+            " | " + statusCode.ToString();
+
     }
 }
 
+//var message = /*"Http" + " | " + DateTime.Now + " | " + _httpRequestMessage.RequestUri.DnsSafeHost + " | " +
+//         result.StatusCode.GetHashCode() + " | " + */result.StatusCode.ToString();

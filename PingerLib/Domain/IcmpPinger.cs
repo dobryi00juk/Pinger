@@ -22,11 +22,10 @@ namespace Pinger.Domain
             OldStatus = IPStatus.Unknown;
         }
 
-        public async Task<string> CheckStatusAsync()
+        public async Task CheckStatusAsync()
         {
-            var request = await _ping.SendPingAsync(_settings.Host, 10000) 
-                ?? throw new ArgumentNullException($"_ping.Send(host)");//? атт для файла настроек,,,
-            var message = /*"Icmp" + " | " + DateTime.Now + " | " + _settings.Host.Normalize() + " | " + */request.Status.ToString();
+            var request = await _ping.SendPingAsync(_settings.Host, 10000);
+            var message = CreateResponseMessage(request.Status);
             NewStatus = request.Status;
 
             if (NewStatus != OldStatus)
@@ -34,8 +33,12 @@ namespace Pinger.Domain
                 ChangeStatus?.Invoke(message);
                 OldStatus = NewStatus;
             }
-
-            return message;
         }
+
+        private string CreateResponseMessage(IPStatus status) =>
+            "ICMP" + 
+            " | " + DateTime.Now + 
+            " | " + _settings.Host.Normalize() + 
+            " | " + status.ToString();
     }
 }

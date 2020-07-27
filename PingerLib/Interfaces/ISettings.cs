@@ -9,6 +9,5 @@ namespace Pinger.Interfaces
         public string Host { get; }
         public int Period { get; }
         public int Port { get; }
-        public string Protocol { get; }
     }
 }

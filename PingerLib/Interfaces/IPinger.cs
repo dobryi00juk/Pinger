@@ -4,6 +4,6 @@ namespace Pinger.Interfaces
 {
     public interface IPinger
     {
-        Task<string> CheckStatusAsync();
+        Task CheckStatusAsync();
     }
 }
