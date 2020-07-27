@@ -48,12 +48,19 @@ namespace Pinger
             }
             else
             {
-                while (true)
+                try
                 {
-                    await htmlPinger.CheckStatusAsync();
-                    await icmpPinger.CheckStatusAsync();
-                    await tcpPinger.CheckStatusAsync();
-                    Thread.Sleep(settings.Period * 1000);
+                    while (true)
+                    {
+                        await htmlPinger.CheckStatusAsync();
+                        await icmpPinger.CheckStatusAsync();
+                        await tcpPinger.CheckStatusAsync();
+                        Thread.Sleep(settings.Period * 1000);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             }
         }

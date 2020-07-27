@@ -24,15 +24,38 @@ namespace Pinger.Domain
 
         public async Task CheckStatusAsync()
         {
-            var request = await _ping.SendPingAsync(_settings.Host, 10000);
-            var message = CreateResponseMessage(request.Status);
-            NewStatus = request.Status;
-
-            if (NewStatus != OldStatus)
+            try
             {
-                ChangeStatus?.Invoke(message);
-                OldStatus = NewStatus;
+                var request = await _ping.SendPingAsync(_settings.Host, 10000);
+                var message = CreateResponseMessage(request.Status);
+                NewStatus = request.Status;
+
+                if (NewStatus != OldStatus)
+                {
+                    ChangeStatus?.Invoke(message);
+                    OldStatus = NewStatus;
+                }
             }
+            
+            #region catch
+
+            catch (PingException ex)
+            {
+                ChangeStatus?.Invoke(ex.InnerException?.Message);
+                throw;
+            }
+            catch (ObjectDisposedException ex)
+            {
+                ChangeStatus?.Invoke(ex.ToString());
+                throw;
+            }
+            catch(InvalidOperationException ex)
+            {
+                ChangeStatus?.Invoke(ex.ToString());
+                throw;
+            }
+
+            #endregion
         }
 
         private string CreateResponseMessage(IPStatus status) =>

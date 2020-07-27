@@ -57,31 +57,36 @@ namespace Pinger
             catch (SocketException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             catch (ObjectDisposedException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             catch (NullReferenceException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             catch (ArgumentNullException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             catch (Exception ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             #endregion
         }
 
         private string CreateResponseMessage(string status) =>
-            "TCP" +
+            "TCP " +
             " | " + DateTime.Now +
             " | " + _settings.Host.Normalize() +
-            " | " + _settings.Port +
+            //" :" + _settings.Port +
             " | " + status;
     }
 }

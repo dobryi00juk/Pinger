@@ -49,10 +49,12 @@ namespace Pinger.Domain
             catch (HttpRequestException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             catch (InvalidOperationException ex)
             {
                 ChangeStatus?.Invoke(ex.ToString());
+                throw;
             }
             finally
             {
