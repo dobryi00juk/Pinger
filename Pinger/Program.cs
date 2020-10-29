@@ -1,19 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Pinger.Configuration;
 using Pinger.Domain;
 using Pinger.Interfaces;
-using System;
-using System.Configuration;
-using FluentValidation;
 using PingerLib.Configuration;
+using PingerLib.Domain;
+using PingerLib.Interfaces;
+
 
 namespace Pinger
 {
@@ -35,36 +36,23 @@ namespace Pinger
 
             var settings = serviceProvider.GetService<ISettings>();
             var settingsValidator = new SettingsValidator();
-            var validationResult = settingsValidator.Validate(settings as Settings);
+            var validationResult = await settingsValidator.ValidateAsync(settings as Settings);
             var result = validationResult;
 
-            //if (!(result == null && result.IsValid))
-            if(!result.IsValid)
+            if (result.IsValid)
             {
-                foreach (var item in result.Errors)
+                while (true)
                 {
-                    logger.LogToFileAndConsole(item.ErrorMessage);
+                    await htmlPinger.CheckStatusAsync();
+                    await icmpPinger.CheckStatusAsync();
+                    await tcpPinger.CheckStatusAsync();
+                    Thread.Sleep(settings.Period * 1000);
                 }
             }
-            else
-            {
-                try
-                {
-                    while (true)
-                    {
-                        await htmlPinger.CheckStatusAsync();
-                        await icmpPinger.CheckStatusAsync();
-                        await tcpPinger.CheckStatusAsync();
-                        Thread.Sleep(settings.Period * 1000);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
-        }
 
+            HandleErrors(result, logger);
+        }
+    
         private static IServiceCollection ConfigureServices()
         {
             var configuration = LoadConfiguration();
@@ -91,5 +79,15 @@ namespace Pinger
 
             return configuration.Build();
         }
+
+        private static void HandleErrors(ValidationResult result, ILogger logger)
+        {
+            foreach (var item in result.Errors)
+            {
+                logger.LogToFile(item.ErrorMessage);
+                Console.WriteLine("Error! Check setting file.");
+            }
+        }
     }
+
 }

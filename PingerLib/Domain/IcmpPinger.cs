@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Net.NetworkInformation;
-using System.Threading;
 using System.Threading.Tasks;
-using Pinger.Configuration;
 using Pinger.Interfaces;
+using PingerLib.Interfaces;
 
-namespace Pinger.Domain
+namespace PingerLib.Domain
 {
     public class IcmpPinger : IPinger
     {
@@ -14,6 +13,7 @@ namespace Pinger.Domain
         private readonly ISettings _settings;
         private IPStatus OldStatus { get; set; }
         private IPStatus NewStatus { get; set; }
+        public string ResponseMessage { get; set; }
 
         public IcmpPinger(Ping ping, ISettings settings)
         {
@@ -22,46 +22,44 @@ namespace Pinger.Domain
             OldStatus = IPStatus.Unknown;
         }
 
-        public async Task CheckStatusAsync()
+        
+
+        public async Task<string> CheckStatusAsync()
         {
+            var uri = _settings.Host;
+
+            if (!uri.StartsWith("www")) uri = "www." + _settings.Host;
+
             try
             {
-                var request = await _ping.SendPingAsync(_settings.Host, 10000);
-                var message = CreateResponseMessage(request.Status);
-                NewStatus = request.Status;
+                var result = await _ping.SendPingAsync(uri, 10000);
+                NewStatus = result.Status;
+                ResponseMessage = CreateResponseMessage(NewStatus.ToString());
 
                 if (NewStatus != OldStatus)
                 {
-                    ChangeStatus?.Invoke(message);
+                    ChangeStatus?.Invoke(ResponseMessage);
                     OldStatus = NewStatus;
                 }
             }
-            
-            #region catch
-
             catch (PingException ex)
             {
-                ChangeStatus?.Invoke(ex.InnerException?.Message);
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.InnerException?.Message);
+                ChangeStatus?.Invoke(_settings.Host + ": " + ResponseMessage);
             }
-            catch (ObjectDisposedException ex)
+            catch (Exception ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
-            }
-            catch(InvalidOperationException ex)
-            {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
             }
 
-            #endregion
+            return ResponseMessage;
         }
 
-        private string CreateResponseMessage(IPStatus status) =>
-            "ICMP" + 
-            " | " + DateTime.Now + 
-            " | " + _settings.Host.Normalize() + 
-            " | " + status.ToString();
+        public string CreateResponseMessage(string status) =>
+            "ICMP" +
+            " | " + DateTime.Now +
+            " | " + _settings.Host +
+            " | " + status;
     }
 }

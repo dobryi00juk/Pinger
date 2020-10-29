@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Pinger.Interfaces;
+using PingerLib.Interfaces;
 
 namespace Pinger
 {
@@ -15,78 +16,93 @@ namespace Pinger
         public event Action<string> ChangeStatus;
         private string NewStatus { get; set; }
         private string OldStatus { get; set; }
+        public string ResponseMessage { get; set; }
         public TcpPinger(ISettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
-        public async Task CheckStatusAsync()
+
+        public async Task<string> CheckStatusAsync()
         {
+            using var tcpClient = new TcpClient();
             try
             {
-                //TO DO: parse host
-                using var tcpClient = new TcpClient();
                 var task = Task.Run(() => tcpClient.ConnectAsync(_settings.Host, _settings.Port).Wait(1000));
                 var result = await task;
-                string message;
 
                 if (result)
                 {
                     NewStatus = "Success";
-                    message = CreateResponseMessage(NewStatus);
+                    ResponseMessage = CreateResponseMessage(NewStatus);
 
-                    if(NewStatus != OldStatus)
+                    if (NewStatus != OldStatus)
                     {
-                        ChangeStatus?.Invoke(message);
+                        ChangeStatus?.Invoke(ResponseMessage);
                         OldStatus = NewStatus;
                     }
+
                 }
                 else
                 {
                     NewStatus = "Fail";
-                    message = CreateResponseMessage(NewStatus);
+                    ResponseMessage = CreateResponseMessage(NewStatus);
 
                     if (NewStatus != OldStatus)
                     {
-                        ChangeStatus?.Invoke(message);
+                        ChangeStatus?.Invoke(ResponseMessage);
                         OldStatus = NewStatus;
                     }
+
                 }
             }
+
             #region catch
+
             catch (SocketException ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
             }
             catch (ObjectDisposedException ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
             }
             catch (NullReferenceException ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
             }
             catch (ArgumentNullException ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
+            }
+            catch (AggregateException ex)
+            {
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
             }
             catch (Exception ex)
             {
-                ChangeStatus?.Invoke(ex.ToString());
-                throw;
+                ResponseMessage = CreateResponseMessage(ex.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
+            }
+
+            finally
+            {
+                tcpClient.Close();
             }
             #endregion
+            return ResponseMessage;
         }
 
-        private string CreateResponseMessage(string status) =>
+        public string CreateResponseMessage(string status) =>
             "TCP " +
             " | " + DateTime.Now +
             " | " + _settings.Host.Normalize() +
-            //" :" + _settings.Port +
+            " | " + _settings.Port +
             " | " + status;
     }
 }

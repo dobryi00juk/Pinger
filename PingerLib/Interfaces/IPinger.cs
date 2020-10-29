@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
 
-namespace Pinger.Interfaces
+namespace PingerLib.Interfaces
 {
     public interface IPinger
     {
-        Task CheckStatusAsync();
+        string ResponseMessage { get; set; }
+        Task<string> CheckStatusAsync();
+        string CreateResponseMessage(string status);
     }
 }

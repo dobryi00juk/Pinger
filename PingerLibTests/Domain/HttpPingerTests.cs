@@ -1,13 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Pinger.Configuration;
+﻿using System.Net.Http;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Pinger.Domain;
-using PingerLibTests;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
+using PingerLib.Configuration;
 
-namespace Pinger.Domain.Tests
+namespace PingerLibTests.Domain
 {
     [TestClass()]
     public class HttpPingerTests

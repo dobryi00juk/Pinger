@@ -1,18 +1,18 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Pinger.Configuration;
-using Pinger.Interfaces;
-using PingerLibTests;
+﻿using System;
 using System.Net.NetworkInformation;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Pinger.Domain;
+using PingerLib.Configuration;
+using PingerLib.Domain;
 
-namespace Pinger.Domain.Tests
+namespace PingerLibTests.Domain
 {
-    [TestClass()]
+    [TestClass]
     public class IcmpPingerTests
     {
-        [TestMethod()]
-        public void CheckStatusAsyncTest()
+        [TestMethod]
+        public void CreateResponseMessageReturnStringTest()
         {
             //Arrange
             var th = new TestHelper();
@@ -20,12 +20,32 @@ namespace Pinger.Domain.Tests
             var settings = new Settings(configuration);
             var ping = new Ping();
 
+            var expected = typeof(string);
+
             //Act
             var ctor = new IcmpPinger(ping, settings);
-            var result = ctor.CheckStatusAsync();
+            var actual = ctor.CreateResponseMessage("test string");
 
             //Assert
-            //Assert.AreEqual("Success", result.Result);
+            Assert.AreEqual(expected, actual.GetType());
+        }
+
+        [TestMethod]
+        public async Task ChangeStatusAsyncTest()
+        {
+            //Arrange
+            var th = new TestHelper();
+            var configuration = th.LoadConfiguration();
+            var settings = new Settings(configuration);
+            var ping = new Ping();
+
+            var expected = typeof(string);
+
+            var ctor = new IcmpPinger(ping, settings);
+            var actual = await ctor.CheckStatusAsync();
+
+            Assert.AreEqual(expected, actual.GetType());
+
         }
     }
 }

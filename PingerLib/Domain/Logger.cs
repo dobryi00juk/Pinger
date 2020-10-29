@@ -1,10 +1,8 @@
-﻿using Pinger.Interfaces;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
+using PingerLib.Interfaces;
 
-namespace Pinger
+namespace PingerLib.Domain
 {
     public class Logger : ILogger
     {
