@@ -6,6 +6,5 @@ namespace PingerLib.Interfaces
     {
         string ResponseMessage { get; set; }
         Task<string> CheckStatusAsync();
-        string CreateResponseMessage(string status);
     }
 }

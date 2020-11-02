@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Pinger.Domain;
 using Pinger.Interfaces;
 using PingerLib.Configuration;
 using PingerLib.Domain;

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Pinger.Interfaces;
 using PingerLib.Interfaces;
 
-namespace Pinger
+namespace PingerLib.Domain
 {
     public class TcpPinger : IPinger
     {
@@ -98,7 +94,7 @@ namespace Pinger
             return ResponseMessage;
         }
 
-        public string CreateResponseMessage(string status) =>
+        private string CreateResponseMessage(string status) =>
             "TCP " +
             " | " + DateTime.Now +
             " | " + _settings.Host.Normalize() +

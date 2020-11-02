@@ -1,11 +1,13 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Pinger.Domain;
 using PingerLib.Configuration;
+using PingerLib.Domain;
 
 namespace PingerLibTests.Domain
 {
-    [TestClass()]
+    [TestClass]
     public class HttpPingerTests
     {
         //[TestMethod()]
@@ -14,10 +16,10 @@ namespace PingerLibTests.Domain
         //    Assert.Fail();
         //}
 
-        [TestMethod()]
-        public void CheckStatusAsyncTest()
+        [TestMethod]
+        public async Task CheckStatusAsyncTestExpectString()
         {
-            //arrage
+            //arrange
             var th = new TestHelper();
             var configuration = th.LoadConfiguration();
             var setting = new Settings(configuration);
@@ -25,10 +27,27 @@ namespace PingerLibTests.Domain
             
             //act
             var httpPinger = new HttpPinger(httpClient, setting, new HttpRequestMessage());
-            var result = httpPinger.CheckStatusAsync();
+            var result = await httpPinger.CheckStatusAsync();
 
             //assert
-            //Assert.AreEqual("OK", result.Result);
+            Assert.AreEqual(result.GetType(), typeof(string));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(HttpRequestException))]
+        public async Task CheckStatusAsyncTestExpectException()
+        {
+            var th = new TestHelper();
+            var configuration = th.LoadConfiguration();
+            var setting = new Settings(configuration);
+            var httpClient = new HttpClient();
+
+            //act
+            var httpPinger = new HttpPinger(httpClient, setting, new HttpRequestMessage());
+            var result = await httpPinger.CheckStatusAsync();
+
+            //assert
+            Assert.AreEqual(typeof(HttpRequestException), result);
         }
     }
 }

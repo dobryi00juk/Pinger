@@ -56,7 +56,7 @@ namespace PingerLib.Domain
             return ResponseMessage;
         }
 
-        public string CreateResponseMessage(string status) =>
+        private string CreateResponseMessage(string status) =>
             "ICMP" +
             " | " + DateTime.Now +
             " | " + _settings.Host +

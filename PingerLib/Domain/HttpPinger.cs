@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Pinger.Interfaces;
 using PingerLib.Interfaces;
 
-namespace Pinger.Domain
+namespace PingerLib.Domain
 {
     public class HttpPinger : IPinger
     {
@@ -86,26 +84,20 @@ namespace Pinger.Domain
 
         private void ResetStatusField()
         {
-            var requestType = _httpRequestMessage.GetType().GetTypeInfo();//берем информацию о типо для того что бы обнулить статус отправки
+            var requestType = _httpRequestMessage.GetType().GetTypeInfo();//берем информацию о типе для того что бы обнулить статус отправки
             var sendStatusField = requestType.GetField("_sendStatus", BindingFlags.Instance | BindingFlags.NonPublic);
 
             if (sendStatusField != null)
                 sendStatusField.SetValue(_httpRequestMessage, 0);
         }
 
-        public string CreateResponseMessage(string status) =>
+        private string CreateResponseMessage(string status) =>
             "HTTP" +
             " | " + DateTime.Now +
             " | " + _httpRequestMessage.RequestUri +
             " | " + StatusCode +
             " | " + status;
-
-        //private bool IsValidUri(string uri)
-        //{
-        //    return Uri.IsWellFormedUriString(uri, UriKind.Absolute);
-        //}
     }
-
 }
 
   
