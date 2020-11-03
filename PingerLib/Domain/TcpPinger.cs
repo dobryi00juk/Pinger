@@ -24,8 +24,7 @@ namespace PingerLib.Domain
             using var tcpClient = new TcpClient();
             try
             {
-                var task = Task.Run(() => tcpClient.ConnectAsync(_settings.Host, _settings.Port).Wait(1000));
-                var result = await task;
+                var result = await Task.Run(() => tcpClient.ConnectAsync(_settings.Host, _settings.Port).Wait(1000));
 
                 if (result)
                 {

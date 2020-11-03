@@ -1,38 +1,28 @@
-﻿//using Microsoft.VisualStudio.TestTools.UnitTesting;
-//using Pinger;
-//using Pinger.Configuration;
-//using PingerLibTests;
-//using System;
-//using System.Collections.Generic;
-//using System.Net.Sockets;
-//using System.Text;
+﻿using PingerLib.Configuration;
+using PingerLib.Domain;
+using System.Threading.Tasks;
+using Xunit;
 
-//namespace Pinger.Tests
-//{
-//    [TestClass()]
-//    public class TcpPingerTests
-//    {
-//        //[TestMethod()]
-//        //public void TcpPingerTest()
-//        //{
-//        //    Assert.Fail();
-//        //}
+namespace PingerLibTests.Domain
+{
+    public class TcpPingerTests
+    {
+        [Fact]
+        public async Task CheckStatusAsyncTest()
+        {
+            //Arrage
+            var th = new TestHelper();
+            var config = th.LoadConfiguration();
+            var setting = new Settings(config);
 
-//        [TestMethod()]
-//        public void CheckStatusAsyncTest()
-//        {
-//            //Arrage
-//            var th = new TestHelper();
-//            var config = th.LoadConfiguration();
-//            var setting = new Settings(config);
-//            var tcpClient = new TcpClient();
+            //Act
+            var tcpPinger = new TcpPinger(setting);
+            var result = await tcpPinger.CheckStatusAsync();
 
-//            //Act
-//            var tcpPinger = new TcpPinger(tcpClient, setting);
-//            var result = tcpPinger.CheckStatus();
-
-//            //Assert
-//            Assert.AreEqual("OK", result);
-//        }
-//    }
-//}
+            //Assert
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.Equal(typeof(string), result.GetType());
+        }
+    }
+}

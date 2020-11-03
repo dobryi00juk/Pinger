@@ -1,30 +1,22 @@
-﻿//using Microsoft.VisualStudio.TestTools.UnitTesting;
-//using Pinger;
-//using System;
-//using System.Collections.Generic;
-//using System.Text;
+﻿using Xunit;
 
-//namespace Pinger.Tests
-//{
-//    [TestClass()]
-//    public class LoggerTests
-//    {
-//        [TestMethod()]
-//        public void LogToConsoleTest()
-//        {
-//            Assert.Fail();
-//        }
+namespace PingerLibTests.Domain
+{
+    public class LoggerTests
+    {
+        [Fact]
+        public void LogToConsoleTest()
+        {
+        }
 
-//        [TestMethod()]
-//        public void LogToFileTest()
-//        {
-//            Assert.Fail();
-//        }
+        [Fact]
+        public void LogToFileTest()
+        {
+        }
 
-//        [TestMethod()]
-//        public void LogToFileAndConsoleTest()
-//        {
-//            Assert.Fail();
-//        }
-//    }
-//}
+        [Fact]
+        public void LogToFileAndConsoleTest()
+        {
+        }
+    }
+}

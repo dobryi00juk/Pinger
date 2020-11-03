@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -23,33 +25,30 @@ namespace Pinger
         {
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
-
+            var pingerServiceList = serviceProvider.GetServices<IPinger>().ToList(); 
             var logger = serviceProvider.GetService<ILogger>();
-            var icmpPinger = serviceProvider.GetService<IcmpPinger>();
-            var tcpPinger = serviceProvider.GetService<TcpPinger>();
-            var htmlPinger = serviceProvider.GetService<HttpPinger>();
 
-            icmpPinger.ChangeStatus += logger.LogToFileAndConsole;
-            htmlPinger.ChangeStatus += logger.LogToFileAndConsole;
-            tcpPinger.ChangeStatus += logger.LogToFileAndConsole;
+            foreach (var item in pingerServiceList) item.ChangeStatus += logger.LogToFileAndConsole;
 
             var settings = serviceProvider.GetService<ISettings>();
             var settingsValidator = new SettingsValidator();
             var validationResult = await settingsValidator.ValidateAsync(settings as Settings);
             var result = validationResult;
 
-            if (result.IsValid)
+            if (!result.IsValid)
             {
-                while (true)
-                {
-                    await htmlPinger.CheckStatusAsync();
-                    await icmpPinger.CheckStatusAsync();
-                    await tcpPinger.CheckStatusAsync();
-                    Thread.Sleep(settings.Period * 1000);
-                }
+                HandleErrors(result, logger);
+                return;
             }
 
-            HandleErrors(result, logger);
+            while (true)
+            {
+                foreach (var item in pingerServiceList)
+                {
+                    await item.CheckStatusAsync();
+                }
+                Thread.Sleep(settings.Period * 1000);
+            }
         }
     
         private static IServiceCollection ConfigureServices()
@@ -58,10 +57,10 @@ namespace Pinger
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddTransient<HttpPinger>();
             serviceCollection.AddSingleton<ISettings, Settings>();
-            serviceCollection.AddTransient<IcmpPinger>();
-            serviceCollection.AddTransient<TcpPinger>();
+            serviceCollection.AddTransient<IPinger, HttpPinger>();
+            serviceCollection.AddTransient<IPinger, IcmpPinger>();
+            serviceCollection.AddTransient<IPinger, TcpPinger>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddScoped<HttpClient>();
             serviceCollection.AddScoped<TcpClient>();
@@ -84,7 +83,7 @@ namespace Pinger
             foreach (var item in result.Errors)
             {
                 logger.LogToFile(item.ErrorMessage);
-                Console.WriteLine("Error! Check setting file.");
+                logger.LogToFileAndConsole("Error! Check setting file.");
             }
         }
     }

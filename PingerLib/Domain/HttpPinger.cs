@@ -29,13 +29,6 @@ namespace PingerLib.Domain
 
         public async Task<string> CheckStatusAsync()
         {
-            //Uri.TryCreate("http://" + _settings.Host, UriKind.Absolute, out var uri);
-            //if (IsValidUri("http://" + _settings.Host))
-            //{
-            //    var uri = new Uri("http://" + _settings.Host);
-            //    _httpRequestMessage.Method = HttpMethod.Head;
-            //    _httpRequestMessage.RequestUri = uri;
-            //}
             var uri = new Uri("http://" + _settings.Host);
             _httpRequestMessage.Method = HttpMethod.Head;
             _httpRequestMessage.RequestUri = uri;
