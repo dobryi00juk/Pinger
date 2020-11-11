@@ -1,4 +1,5 @@
-﻿using PingerLib.Configuration;
+﻿using System;
+using PingerLib.Configuration;
 using PingerLib.Domain;
 using System.Threading.Tasks;
 using Xunit;
@@ -10,7 +11,7 @@ namespace PingerLibTests.Domain
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            //Arrage
+            //Arrange
             var th = new TestHelper();
             var config = th.LoadConfiguration();
             var setting = new Settings(config);
@@ -23,6 +24,16 @@ namespace PingerLibTests.Domain
             Assert.NotNull(result);
             Assert.NotEmpty(result);
             Assert.Equal(typeof(string), result.GetType());
+        }
+
+        [Fact]
+        public void TcpPingerConstructorTest()
+        {
+            var th = new TestHelper();
+            var config = th.LoadConfiguration();
+            var setting = new Settings(config);
+
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null));
         }
     }
 }

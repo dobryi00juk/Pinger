@@ -1,6 +1,6 @@
 ﻿namespace PingerLib.Interfaces
 {
-    public interface ILogger
+    public interface ILogger 
     {
         void LogToConsole(string message);
         void LogToFile(string message);

@@ -23,23 +23,18 @@ namespace Pinger
     {
         public static async Task Main(string[] args)
         {
-            var services = ConfigureServices();
-            var serviceProvider = services.BuildServiceProvider();
-            var pingerServiceList = serviceProvider.GetServices<IPinger>().ToList(); 
-            var logger = serviceProvider.GetService<ILogger>();
-
-            foreach (var item in pingerServiceList) item.ChangeStatus += logger.LogToFileAndConsole;
-
-            var settings = serviceProvider.GetService<ISettings>();
-            var settingsValidator = new SettingsValidator();
-            var validationResult = await settingsValidator.ValidateAsync(settings as Settings);
-            var result = validationResult;
+            var services = new Startup().ConfigureServices().BuildServiceProvider();
+            var pingerServiceList = GetPingerServices(services).ToList();
+            var settings = services.GetService<ISettings>();
+            var result = await ValidateSetting(settings);
 
             if (!result.IsValid)
             {
-                HandleErrors(result, logger);
+                HandleErrors(services);
                 return;
             }
+
+            //var serviceList = pingerServiceList as IPinger[] ?? pingerServiceList.ToArray();
 
             while (true)
             {
@@ -51,41 +46,35 @@ namespace Pinger
             }
         }
     
-        private static IServiceCollection ConfigureServices()
+        private static void HandleErrors(IServiceProvider services)  /*ValidationResult result, ILogger logger*/
         {
-            var configuration = LoadConfiguration();
+            var validationResult = services.GetService<ValidationResult>();
+            var logger = services.GetService<ILogger>();
 
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddSingleton<ISettings, Settings>();
-            serviceCollection.AddTransient<IPinger, HttpPinger>();
-            serviceCollection.AddTransient<IPinger, IcmpPinger>();
-            serviceCollection.AddTransient<IPinger, TcpPinger>();
-            serviceCollection.AddTransient<HttpRequestMessage>();
-            serviceCollection.AddScoped<HttpClient>();
-            serviceCollection.AddScoped<TcpClient>();
-            serviceCollection.AddTransient<Ping>();
-            serviceCollection.AddTransient<ILogger, Logger>();
-            return serviceCollection;
-        }
-
-        private static IConfiguration LoadConfiguration()
-        {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", false, true);
-
-            return configuration.Build();
-        }
-
-        private static void HandleErrors(ValidationResult result, ILogger logger)
-        {
-            foreach (var item in result.Errors)
+            foreach (var item in validationResult.Errors)
             {
                 logger.LogToFile(item.ErrorMessage);
                 logger.LogToFileAndConsole("Error! Check setting file.");
             }
         }
-    }
 
+        private static IEnumerable<IPinger> GetPingerServices(IServiceProvider services) /*ILogger logger*/
+        {
+            var pingerServices = services.GetServices<IPinger>().ToList();
+            var logger = services.GetService<ILogger>();
+
+            foreach (var item in pingerServices)
+                item.ChangeStatus += logger.LogToFileAndConsole;
+
+            return pingerServices;
+        }
+
+        private static async Task<ValidationResult> ValidateSetting(ISettings settings)
+        {
+            var settingsValidator = new SettingsValidator();
+            var validationResult = await settingsValidator.ValidateAsync(settings as Settings);
+
+            return validationResult;
+        }
+    }
 }
