@@ -1,6 +1,6 @@
-﻿using System;
-using PingerLib.Configuration;
+﻿using PingerLib.Configuration;
 using PingerLib.Domain;
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
@@ -17,7 +17,7 @@ namespace PingerLibTests.Domain
             var configuration = th.LoadConfiguration();
             var setting = new Settings(configuration);
             var httpClient = new HttpClient();
-            
+
             //act
             var httpPinger = new HttpPinger(httpClient, setting, new HttpRequestMessage());
             var result = await httpPinger.CheckStatusAsync();
@@ -29,17 +29,18 @@ namespace PingerLibTests.Domain
         }
 
         [Fact]
-        public void HttpPingerConstructorTest()
+        public void ConstructorTest()
         {
-            var httpClient = new HttpClient();
+            //HttpClient httpClient, ISettings settings, HttpRequestMessage httpRequestMessage
             var th = new TestHelper();
             var configuration = th.LoadConfiguration();
             var setting = new Settings(configuration);
+            var httpClient = new HttpClient();
             var httpRequestMessage = new HttpRequestMessage();
 
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, setting, null));
             Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, setting, httpRequestMessage));
             Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, httpRequestMessage));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, setting, null));
         }
     }
 }

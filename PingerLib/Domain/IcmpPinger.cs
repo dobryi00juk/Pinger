@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using Pinger.Interfaces;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain

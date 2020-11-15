@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using Pinger.Interfaces;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
@@ -32,7 +31,7 @@ namespace PingerLib.Domain
             var uri = new Uri("http://" + _settings.Host);
             _httpRequestMessage.Method = HttpMethod.Head;
             _httpRequestMessage.RequestUri = uri;
-
+            
             try
             {
                 var result = await _httpClient.SendAsync(_httpRequestMessage);

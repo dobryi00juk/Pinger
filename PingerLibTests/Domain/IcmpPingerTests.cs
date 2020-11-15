@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.NetworkInformation;
+﻿using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Domain;
@@ -26,18 +25,6 @@ namespace PingerLibTests.Domain
             Assert.NotNull(result);
             Assert.NotEmpty(result);
             Assert.Equal(typeof(string), result.GetType());
-        }
-
-        [Fact]
-        public void IcmpPingerConstructorTest()
-        {
-            var th = new TestHelper();
-            var configuration = th.LoadConfiguration();
-            var settings = new Settings(configuration);
-            var ping = new Ping();
-
-            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(null, settings));
-            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(ping, null));
         }
     }
 }

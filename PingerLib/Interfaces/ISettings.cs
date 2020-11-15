@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using FluentValidation.Results;
 
-namespace Pinger.Interfaces
+namespace PingerLib.Interfaces
 {
     public interface ISettings
     {
         public string Host { get; }
         public int Period { get; }
         public int Port { get; }
+        public ValidationResult ValidationResult { get; set; }
     }
 }

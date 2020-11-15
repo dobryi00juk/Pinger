@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Pinger.Interfaces;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
@@ -9,6 +8,7 @@ namespace PingerLib.Domain
     public class TcpPinger : IPinger
     {
         private readonly ISettings _settings;
+        
         public event Action<string> ChangeStatus;
         private string NewStatus { get; set; }
         private string OldStatus { get; set; }
@@ -54,6 +54,11 @@ namespace PingerLib.Domain
 
             #region catch
 
+            catch (AggregateException ex)
+            {
+                if (ex.InnerException != null) ResponseMessage = CreateResponseMessage(ex.InnerException.Message);
+                ChangeStatus?.Invoke(ResponseMessage);
+            }
             catch (SocketException ex)
             {
                 ResponseMessage = CreateResponseMessage(ex.Message);
@@ -70,11 +75,6 @@ namespace PingerLib.Domain
                 ChangeStatus?.Invoke(ResponseMessage);
             }
             catch (ArgumentNullException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (AggregateException ex)
             {
                 ResponseMessage = CreateResponseMessage(ex.Message);
                 ChangeStatus?.Invoke(ResponseMessage);
