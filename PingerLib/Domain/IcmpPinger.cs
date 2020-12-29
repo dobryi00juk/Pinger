@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Interfaces;
 
@@ -7,58 +8,60 @@ namespace PingerLib.Domain
 {
     public class IcmpPinger : IPinger
     {
-        public event Action<string> ChangeStatus;
         private readonly Ping _ping;
-        private readonly ISettings _settings;
-        private IPStatus OldStatus { get; set; }
-        private IPStatus NewStatus { get; set; }
-        public string ResponseMessage { get; set; }
+        private readonly ILogger _logger;
+        public event Action<string> ErrorOccured;
+        private bool _statusChanged;
+        public IPStatus Status;
+        private int _oldStatus = -2;
+        private int _newStatus;
 
-        public IcmpPinger(Ping ping, ISettings settings)
+        public IcmpPinger(Ping ping, ILogger logger)
         {
+            Status = IPStatus.Unknown;
             _ping = ping ?? throw new ArgumentNullException(nameof(ping));
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            OldStatus = IPStatus.Unknown;
+            _logger = logger;
         }
 
-        
-
-        public async Task<string> CheckStatusAsync()
+        public async Task GetStatusAsync(string host, int period)
         {
-            var uri = _settings.Host;
+            if (host == null) throw new ArgumentNullException(nameof(host));
 
-            if (!uri.StartsWith("www")) uri = "www." + _settings.Host;
+            while (true)
+            {
+                var status = await CheckStatusAsync(host);
 
+                if (_statusChanged)
+                    _logger.LogToConsole($"Icmp | {DateTime.Now} | {host} | {status}");
+                
+                Thread.Sleep(period * 1000);
+            }
+        }
+
+        private async Task<IPStatus> CheckStatusAsync(string host)
+        {
             try
             {
-                var result = await _ping.SendPingAsync(uri, 10000);
-                NewStatus = result.Status;
-                ResponseMessage = CreateResponseMessage(NewStatus.ToString());
+                var result = await _ping.SendPingAsync(host, 10000);
+                _newStatus = (int) result.Status;
 
-                if (NewStatus != OldStatus)
+                if (_newStatus != _oldStatus)
                 {
-                    ChangeStatus?.Invoke(ResponseMessage);
-                    OldStatus = NewStatus;
+                    _statusChanged = true;
+                    _oldStatus = _newStatus;
                 }
-            }
-            catch (PingException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.InnerException?.Message);
-                ChangeStatus?.Invoke(_settings.Host + ": " + ResponseMessage);
+                else
+                {
+                    _statusChanged = false;
+                }
+
+                return result.Status;
             }
             catch (Exception ex)
             {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
+                ErrorOccured?.Invoke(ex.Message);
+                return IPStatus.BadOption;
             }
-
-            return ResponseMessage;
         }
-
-        private string CreateResponseMessage(string status) =>
-            "ICMP" +
-            " | " + DateTime.Now +
-            " | " + _settings.Host +
-            " | " + status;
     }
 }

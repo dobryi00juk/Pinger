@@ -1,31 +1,39 @@
-﻿using PingerLib.Configuration;
-using PingerLib.Domain;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using PingerLib.Configuration;
+using PingerLib.Domain;
 using Xunit;
 
-namespace PingerLibTests.Domain
+namespace PingerLib.Tests.Domain
 {
     public class HttpPingerTests
     {
+        private readonly List<Host> _hosts = new List<Host>
+        {
+            new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
+            new Host {HostName = "google.com", Period = 1, Protocol = "http"},
+            new Host {HostName = "ya.ru", Period = 2, Protocol = "icmp"},
+        };
+
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            //arrange
+            //Arrange
             var th = new TestHelper();
             var configuration = th.LoadConfiguration();
-            var setting = new Settings(configuration);
+            var logger = new Logger();
+            var rules = new SettingsRules();
+            var setting = new Settings(configuration, _hosts, rules, logger);
+            var httpRequestMessage = new HttpRequestMessage();
             var httpClient = new HttpClient();
 
-            //act
-            var httpPinger = new HttpPinger(httpClient, setting, new HttpRequestMessage());
-            var result = await httpPinger.CheckStatusAsync();
+            //Act
+            var httpPinger = new HttpPinger(httpClient, httpRequestMessage, logger);
 
-            //assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result);
-            Assert.Equal(typeof(string), result.GetType());
+            //Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => httpPinger.GetStatusAsync(null, 2));
         }
 
         [Fact]
@@ -33,14 +41,14 @@ namespace PingerLibTests.Domain
         {
             //HttpClient httpClient, ISettings settings, HttpRequestMessage httpRequestMessage
             var th = new TestHelper();
+            var logger = new Logger();
             var configuration = th.LoadConfiguration();
-            var setting = new Settings(configuration);
             var httpClient = new HttpClient();
             var httpRequestMessage = new HttpRequestMessage();
 
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, setting, null));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, setting, httpRequestMessage));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, httpRequestMessage));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, httpRequestMessage, logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, null));
         }
     }
 }

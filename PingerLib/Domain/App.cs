@@ -1,56 +1,40 @@
-﻿using PingerLib.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using FluentValidation.Results;
+using PingerLib.Configuration;
+using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
 {
-    public class App : IApp
+    public class App 
     {
-        private readonly IEnumerable<IPinger> _pingerList;
-        private readonly ILogger _logger;
-        private readonly ISettings _settings;
+        private readonly IServiceProvider _serviceProvider;
 
-        public App(IEnumerable<IPinger> pingerList, ILogger logger, ISettings settings)
+        public App(IServiceProvider serviceProvider)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _pingerList = pingerList ?? throw new ArgumentNullException(nameof(pingerList));
-            
-            foreach (var item in _pingerList)
+            _serviceProvider = serviceProvider;
+        }
+
+        public void Start(List<Host> hosts)
+        {
+            if (hosts == null) throw new ArgumentNullException(nameof(hosts));
+
+            foreach (var host in hosts)
             {
-                item.ChangeStatus += _logger.LogToFileAndConsole;
+                Task.Run(() => CreatePinger(host.Protocol).GetStatusAsync(host.HostName, host.Period));
             }
         }
 
-        public async Task Start()
+        public IPinger CreatePinger(string protocolType)
         {
-            if (!_settings.ValidationResult.IsValid)
+            return protocolType switch
             {
-                HandleErrors(_settings.ValidationResult, _logger);
-                return;
-            }
-
-            while (true)
-            {
-                foreach (var item in _pingerList)
-                {
-                    await item.CheckStatusAsync();
-                }
-                Thread.Sleep(_settings.Period * 1000);
-            }
-        }
-
-        private static void HandleErrors(ValidationResult result, ILogger logger)
-        {
-            foreach (var item in result.Errors)
-            {
-                logger.LogToFile(item.ErrorMessage);
-                logger.LogToFileAndConsole("Error! Check setting file.");
-            }
+                "icmp" => _serviceProvider.GetService(typeof(IcmpPinger)) as IcmpPinger,
+                "tcp" => _serviceProvider.GetService(typeof(TcpPinger)) as TcpPinger,
+                "http" => _serviceProvider.GetService(typeof(HttpPinger)) as HttpPinger,
+                _ => throw new ArgumentException("ProtocolType Error")
+            };
         }
     }
 }
+

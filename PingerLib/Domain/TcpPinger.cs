@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Interfaces;
 
@@ -7,97 +8,60 @@ namespace PingerLib.Domain
 {
     public class TcpPinger : IPinger
     {
-        private readonly ISettings _settings;
-        
-        public event Action<string> ChangeStatus;
-        private string NewStatus { get; set; }
-        private string OldStatus { get; set; }
-        public string ResponseMessage { get; set; }
-        public TcpPinger(ISettings settings)
+        private readonly ILogger _logger;
+        public event Action<string> ErrorOccured;
+        private string _statusChanged;
+        private string _oldStatus;
+        public TcpPinger(ILogger logger)
         {
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public async Task GetStatusAsync(string host, int period)
+        {
+            if (host == null) throw new ArgumentNullException(nameof(host));
 
-        public async Task<string> CheckStatusAsync()
+            while (true)
+            {
+                var status = await CheckStatusAsync(host);
+                var connection = status ? "Connected" : "Disconnected";
+
+                if (_statusChanged == "true")
+                    _logger.LogToConsole($"Tcp  | {DateTime.Now} | {host} | {connection}");
+
+                Thread.Sleep(period * 1000);
+            }
+        }
+
+        private async Task<bool> CheckStatusAsync(string host)
         {
             using var tcpClient = new TcpClient();
             try
             {
-                var result = await Task.Run(() => tcpClient.ConnectAsync(_settings.Host, _settings.Port).Wait(1000));
+                await tcpClient.ConnectAsync(host, 80);
+                var newStatus = tcpClient.Connected.ToString().ToLower();
 
-                if (result)
+                if (newStatus != _oldStatus)
                 {
-                    NewStatus = "Success";
-                    ResponseMessage = CreateResponseMessage(NewStatus);
-
-                    if (NewStatus != OldStatus)
-                    {
-                        ChangeStatus?.Invoke(ResponseMessage);
-                        OldStatus = NewStatus;
-                    }
-
+                    _statusChanged = "true";
+                    _oldStatus = newStatus;
                 }
                 else
                 {
-                    NewStatus = "Fail";
-                    ResponseMessage = CreateResponseMessage(NewStatus);
-
-                    if (NewStatus != OldStatus)
-                    {
-                        ChangeStatus?.Invoke(ResponseMessage);
-                        OldStatus = NewStatus;
-                    }
-
+                    _statusChanged = "false";
                 }
-            }
 
-            #region catch
-
-            catch (AggregateException ex)
-            {
-                if (ex.InnerException != null) ResponseMessage = CreateResponseMessage(ex.InnerException.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (SocketException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (ObjectDisposedException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (NullReferenceException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (ArgumentNullException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
+                return true;
             }
             catch (Exception ex)
             {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
+                ErrorOccured?.Invoke(ex.Message);
+                return false;
             }
-
             finally
             {
                 tcpClient.Close();
             }
-            #endregion
-            return ResponseMessage;
         }
-
-        private string CreateResponseMessage(string status) =>
-            "TCP " +
-            " | " + DateTime.Now +
-            " | " + _settings.Host.Normalize() +
-            " | " + _settings.Port +
-            " | " + status;
     }
 }

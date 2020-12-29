@@ -1,10 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
@@ -16,19 +14,18 @@ namespace Pinger
 {
     internal class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            var s = "www.google";
-            var isMatch = Regex.IsMatch(s, @"^((http|ftp|https|www)://)?([\w+?\.\w+])+([a-zA-Z0-9\~\!\@\#\$\%\^\&\*\(\)_\-\=\+\\\/\?\.\:\;\'\,]*)?$");
-            Console.WriteLine(isMatch);
-            
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
-            
-            var app = serviceProvider.GetService<IApp>();
-            var settings = serviceProvider.GetService<ISettings>();
+            var settings = serviceProvider.GetService<Settings>();
 
-            await app.Start();
+            if (!settings.ValidationResult.IsValid)
+                return;
+
+            var app = serviceProvider.GetService<App>();
+            app.Start(settings.HostList);
+            Console.ReadKey();
         }
     
         private static IServiceCollection ConfigureServices()
@@ -36,16 +33,18 @@ namespace Pinger
             var configuration = LoadConfiguration();
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddSingleton<ISettings, Settings>();
-            serviceCollection.AddTransient<IPinger, HttpPinger>();
-            serviceCollection.AddTransient<IPinger, IcmpPinger>();
-            serviceCollection.AddTransient<IPinger, TcpPinger>();
+            serviceCollection.AddSingleton<List<Host>>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddScoped<HttpClient>();
             serviceCollection.AddTransient<Ping>();
-            serviceCollection.AddSingleton<IApp, App>();
+            serviceCollection.AddTransient<TcpPinger>();
+            serviceCollection.AddTransient<HttpPinger>();
+            serviceCollection.AddTransient<IcmpPinger>();
+            serviceCollection.AddTransient<PingReply>();
+            serviceCollection.AddSingleton<App>();
             serviceCollection.AddTransient<ILogger, Logger>();
-            serviceCollection.AddScoped<SettingsValidator>();
+            serviceCollection.AddSingleton<Settings>();
+            serviceCollection.AddScoped<SettingsRules>();
 
             return serviceCollection;
         }

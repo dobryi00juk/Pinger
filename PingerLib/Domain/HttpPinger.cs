@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Interfaces;
 
@@ -9,69 +10,68 @@ namespace PingerLib.Domain
 {
     public class HttpPinger : IPinger
     {
-        public event Action<string> ChangeStatus;
-        private HttpStatusCode OldStatus { get; set; }
-        private HttpStatusCode NewStatus { get; set; }
-        private int StatusCode { get; set; }
-        public string ResponseMessage { get; set; }
-        private readonly ISettings _settings;
         private readonly HttpRequestMessage _httpRequestMessage;
+        private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
+        public event Action<string> ErrorOccured;
+        private bool _statusChanged;
+        private int _oldStatus;
+        private int _newStatus;
 
-        public HttpPinger(HttpClient httpClient, ISettings settings, HttpRequestMessage httpRequestMessage)
+        public HttpPinger(HttpClient httpClient, HttpRequestMessage httpRequestMessage, ILogger logger)
         {
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _httpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
-            OldStatus = 0;
+            _logger = logger ?? throw  new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<string> CheckStatusAsync()
+        public async Task GetStatusAsync(string host, int period)
         {
-            var uri = new Uri("http://" + _settings.Host);
+            if (host == null) throw new ArgumentNullException(nameof(host));
+
+            while (true)
+            {
+                var status = await CheckStatusAsync(host);
+
+                if (_statusChanged)
+                    _logger.LogToConsole($"Http | {DateTime.Now} | {host} | {status} | {(int)status}");
+                
+                Thread.Sleep(period * 1000);
+            }
+        }
+
+        private async Task<HttpStatusCode> CheckStatusAsync(string host)
+        {
             _httpRequestMessage.Method = HttpMethod.Head;
-            _httpRequestMessage.RequestUri = uri;
-            
+            _httpRequestMessage.RequestUri = new Uri("http://" + host);
+
             try
             {
                 var result = await _httpClient.SendAsync(_httpRequestMessage);
-                NewStatus = result.StatusCode;
-                StatusCode = (int)NewStatus;
-                ResponseMessage = CreateResponseMessage(NewStatus.ToString());
+                _newStatus = (int) result.StatusCode;
 
-                if (NewStatus != OldStatus)
+                if (_newStatus != _oldStatus)
                 {
-                    ChangeStatus?.Invoke(ResponseMessage);
-                    OldStatus = NewStatus;
+                    _statusChanged = true;
+                    _oldStatus = _newStatus;
                 }
-            }
+                else
+                {
+                    _statusChanged = false;
+                }
 
-            #region catch
-
-            catch (HttpRequestException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
+                return result.StatusCode;
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
-            }
-            catch (UriFormatException ex)
-            {
-                ResponseMessage = CreateResponseMessage(ex.Message);
-                ChangeStatus?.Invoke(ResponseMessage);
+                ErrorOccured?.Invoke(ex.Message);
+                return HttpStatusCode.BadRequest;
             }
             finally
             {
                 //сбрасываем значение sendStatusField для использования Http запросов в цикле
                 ResetStatusField();
             }
-
-            #endregion
-
-            return ResponseMessage;
         }
 
         private void ResetStatusField()
@@ -82,14 +82,6 @@ namespace PingerLib.Domain
             if (sendStatusField != null)
                 sendStatusField.SetValue(_httpRequestMessage, 0);
         }
-
-        private string CreateResponseMessage(string status) =>
-            "HTTP" +
-            " | " + DateTime.Now +
-            " | " + _httpRequestMessage.RequestUri +
-            " | " + StatusCode +
-            " | " + status;
     }
 }
 
-  

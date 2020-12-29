@@ -1,6 +1,6 @@
 ﻿using Xunit;
 
-namespace PingerLibTests.Domain
+namespace PingerLib.Tests.Domain
 {
     public class LoggerTests
     {

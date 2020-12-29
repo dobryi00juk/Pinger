@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pinger", "Pinger\Pinger.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PingerLib", "PingerLib\PingerLib.csproj", "{C47AC24F-ACFD-48D0-BFC7-E92646AF5558}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingerLibTests", "PingerLibTests\PingerLibTests.csproj", "{3B602C2B-8B98-47D9-916F-AE59299A87BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PingerLib.Tests", "PingerLibTests\PingerLib.Tests.csproj", "{3B602C2B-8B98-47D9-916F-AE59299A87BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

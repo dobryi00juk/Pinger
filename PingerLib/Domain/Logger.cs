@@ -13,15 +13,21 @@ namespace PingerLib.Domain
 
         public void LogToFile(string message)
         {
-            using var writer = File.AppendText("log.txt");
-            writer.WriteLine($"{message}");
+            lock (this)
+            {
+                using var writer = File.AppendText("log.txt");
+                writer.WriteLine($"{message}");
+            }
         }
 
         public void LogToFileAndConsole(string message)
         {
             Console.WriteLine(message);
-            using var writer = File.AppendText("log.txt");
-            writer.WriteLine($"{message}");
+            lock (this)
+            {
+                using var writer = File.AppendText("log.txt");
+                writer.WriteLine($"{message}");
+            }
         }
     }
 }
