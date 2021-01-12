@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
@@ -19,12 +20,19 @@ namespace Pinger
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
             var settings = serviceProvider.GetService<Settings>();
+            var cts = new CancellationTokenSource();
 
             if (!settings.ValidationResult.IsValid)
                 return;
+            
+            Console.WriteLine("Press <enter> to stop");
 
             var app = serviceProvider.GetService<App>();
-            app.Start(settings.HostList);
+            app.Start(settings.HostList, cts);
+
+            if (Console.ReadKey().Key == ConsoleKey.Enter)
+                cts.Cancel();
+
             Console.ReadKey();
         }
     

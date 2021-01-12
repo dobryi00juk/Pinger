@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Domain;
@@ -28,12 +29,13 @@ namespace PingerLib.Tests.Domain
             var setting = new Settings(configuration, _hosts, rules, logger);
             var httpRequestMessage = new HttpRequestMessage();
             var httpClient = new HttpClient();
+            var ct = new CancellationToken();
 
             //Act
             var httpPinger = new HttpPinger(httpClient, httpRequestMessage, logger);
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => httpPinger.GetStatusAsync(null, 2));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => httpPinger.GetStatusAsync(null, 2, ct));
         }
 
         [Fact]

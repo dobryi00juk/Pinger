@@ -23,11 +23,11 @@ namespace PingerLib.Domain
             _logger = logger;
         }
 
-        public async Task GetStatusAsync(string host, int period)
+        public async Task GetStatusAsync(string host, int period, CancellationToken cts)
         {
             if (host == null) throw new ArgumentNullException(nameof(host));
 
-            while (true)
+            while (!cts.IsCancellationRequested)
             {
                 var status = await CheckStatusAsync(host);
 
@@ -36,6 +36,7 @@ namespace PingerLib.Domain
                 
                 Thread.Sleep(period * 1000);
             }
+            Console.WriteLine("Icmp stop");
         }
 
         private async Task<IPStatus> CheckStatusAsync(string host)

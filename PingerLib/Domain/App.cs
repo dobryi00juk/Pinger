@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Interfaces;
@@ -15,13 +16,14 @@ namespace PingerLib.Domain
             _serviceProvider = serviceProvider;
         }
 
-        public void Start(List<Host> hosts)
+        public void Start(List<Host> hosts, CancellationTokenSource cts)
         {
             if (hosts == null) throw new ArgumentNullException(nameof(hosts));
+            if (cts == null) throw new ArgumentNullException(nameof(cts));
 
             foreach (var host in hosts)
             {
-                Task.Run(() => CreatePinger(host.Protocol).GetStatusAsync(host.HostName, host.Period));
+                Task.Run(() => CreatePinger(host.Protocol).GetStatusAsync(host.HostName, host.Period, cts.Token));
             }
         }
 
