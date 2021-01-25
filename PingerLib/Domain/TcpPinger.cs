@@ -2,62 +2,71 @@
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using PingerLib.Configuration;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
 {
     public class TcpPinger : IPinger
     {
+        private readonly Host _host;
         private readonly ILogger _logger;
-        public event Action<string> ErrorOccured;
-        private string _statusChanged;
+        private bool _statusChanged;
+        private string _newStatus;
         private string _oldStatus;
-        public TcpPinger(ILogger logger)
+
+        public TcpPinger(Host host, ILogger logger)
         {
+            _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        public async Task GetStatusAsync(string host, int period, CancellationToken cts)
+        public async Task<PingResult> GetStatusAsync(CancellationToken token)
         {
-            if (host == null) throw new ArgumentNullException(nameof(host));
+            if(token.IsCancellationRequested)
+                _logger.Log("Tcp:GetStatusAsync method canceled");
+            
+            var status = await CheckStatusAsync(_host.HostName, token);
 
-            while (!cts.IsCancellationRequested)
+            return new PingResult
             {
-                var status = await CheckStatusAsync(host);
-                var connection = status ? "Connected" : "Disconnected";
-
-                if (_statusChanged == "true")
-                    _logger.LogToConsole($"Tcp  | {DateTime.Now} | {host} | {connection}");
-
-                Thread.Sleep(period * 1000);
-            }
-            Console.WriteLine("Tcp stop");
+                Protocol = "tcp",
+                Date = DateTime.Now,
+                Host = _host.HostName,
+                Status = status,
+                StatusChanged = _statusChanged
+            };
         }
 
-        private async Task<bool> CheckStatusAsync(string host)
+        private async Task<string> CheckStatusAsync(string host, CancellationToken token)
         {
+            await Task.Delay(_host.Period * 1000, token);
+
             using var tcpClient = new TcpClient();
             try
             {
-                await tcpClient.ConnectAsync(host, 80);
-                var newStatus = tcpClient.Connected.ToString().ToLower();
-
-                if (newStatus != _oldStatus)
+                if (token.IsCancellationRequested)
                 {
-                    _statusChanged = "true";
-                    _oldStatus = newStatus;
+                    _logger.Log("TcpPinger:CheckStatusAsync method canceled!");
+                    throw new OperationCanceledException(token);
+                }
+
+                await tcpClient.ConnectAsync(host, 80);
+                _newStatus = tcpClient.Connected ? "Success" : "Fail";
+
+                if (_newStatus != _oldStatus)
+                {
+                    _statusChanged = true;
+                    _oldStatus = _newStatus;
                 }
                 else
-                {
-                    _statusChanged = "false";
-                }
+                    _statusChanged = false;
 
-                return true;
+                return _newStatus;
             }
             catch (Exception ex)
             {
-                ErrorOccured?.Invoke(ex.Message);
-                return false;
+                _logger.Log(ex.Message);
+                return "Error";
             }
             finally
             {

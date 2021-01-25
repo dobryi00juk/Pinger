@@ -1,6 +1,8 @@
-﻿namespace PingerLib.Configuration
+﻿using PingerLib.Interfaces;
+
+namespace PingerLib.Configuration
 {
-    public class Host
+    public class Host : IHost
     {
         public string HostName { get; set; }
         public string Protocol { get; set; }

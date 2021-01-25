@@ -5,52 +5,45 @@ using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Domain;
+using PingerLib.Interfaces;
 using Xunit;
 
 namespace PingerLib.Tests.Domain
 {
     public class HttpPingerTests
     {
-        private readonly List<Host> _hosts = new List<Host>
+        private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "google.com", Period = 1, Protocol = "http"},
-            new Host {HostName = "ya.ru", Period = 2, Protocol = "icmp"},
+            new HttpHost {HostName = "ya.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
         };
 
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            //Arrange
-            var th = new TestHelper();
-            var configuration = th.LoadConfiguration();
-            var logger = new Logger();
-            var rules = new SettingsRules();
-            var setting = new Settings(configuration, _hosts, rules, logger);
-            var httpRequestMessage = new HttpRequestMessage();
-            var httpClient = new HttpClient();
-            var ct = new CancellationToken();
+            HttpClient httpClient = new ();
+            HttpRequestMessage httpRequestMessage = new ();
+            Logger logger = new();
+            var httpPinger = new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, logger);
 
-            //Act
-            var httpPinger = new HttpPinger(httpClient, httpRequestMessage, logger);
+            var result = await httpPinger.GetStatusAsync(default);
 
-            //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => httpPinger.GetStatusAsync(null, 2, ct));
+            Assert.NotNull(result);
+            Assert.Equal(typeof(PingResult), result.GetType());
         }
 
         [Fact]
         public void ConstructorTest()
         {
-            //HttpClient httpClient, ISettings settings, HttpRequestMessage httpRequestMessage
-            var th = new TestHelper();
             var logger = new Logger();
-            var configuration = th.LoadConfiguration();
             var httpClient = new HttpClient();
             var httpRequestMessage = new HttpRequestMessage();
 
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, httpRequestMessage, logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, null));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, httpRequestMessage, _hosts[2] as HttpHost, logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, _hosts[2] as HttpHost, logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, null, logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, null));
         }
     }
 }

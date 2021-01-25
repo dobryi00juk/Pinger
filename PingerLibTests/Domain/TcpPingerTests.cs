@@ -30,7 +30,7 @@ namespace PingerLib.Tests.Domain
 
             //Assert
 
-            Task.Run(() => tcpPinger.GetStatusAsync("www.microsoft.com", 1)).GetAwaiter().GetResult();
+            //Task.Run(() => tcpPinger.GetStatusAsync("www.microsoft.com", 1)).GetAwaiter().GetResult();
             //await tcpPinger.GetStatusAsync("www.microsoft.com", 1);
             //await Assert.ThrowsAsync<ArgumentNullException>(() => tcpPinger.GetStatusAsync(null, 1));
         }

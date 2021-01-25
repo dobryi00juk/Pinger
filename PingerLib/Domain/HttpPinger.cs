@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using PingerLib.Configuration;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
@@ -11,44 +12,55 @@ namespace PingerLib.Domain
     public class HttpPinger : IPinger
     {
         private readonly HttpRequestMessage _httpRequestMessage;
+        private readonly HttpHost _host;
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
-        public event Action<string> ErrorOccured;
         private bool _statusChanged;
         private int _oldStatus;
         private int _newStatus;
 
-        public HttpPinger(HttpClient httpClient, HttpRequestMessage httpRequestMessage, ILogger logger)
+        public HttpPinger(HttpClient httpClient, HttpRequestMessage httpRequestMessage, HttpHost host, ILogger logger)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _httpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));
+            _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw  new ArgumentNullException(nameof(logger));
         }
 
-        public async Task GetStatusAsync(string host, int period, CancellationToken cts)
+        public async Task<PingResult> GetStatusAsync(CancellationToken token)
         {
-            if (host == null) throw new ArgumentNullException(nameof(host));
-            
-            while (!cts.IsCancellationRequested)
-            {
-                var status = await CheckStatusAsync(host);
+            var status = await CheckStatusAsync(_host.HostName, token);
 
-                if (_statusChanged)
-                    _logger.LogToConsole($"Http | {DateTime.Now} | {host} | {status} | {(int)status}");
-                
-                Thread.Sleep(period * 1000);
-            }
-            Console.WriteLine("Http stop");
+            if (token.IsCancellationRequested)
+                _logger.Log("HttpPinger:GetStatusAsync method canceled");
+
+            return new PingResult
+            {
+                Protocol = "http",
+                Date = DateTime.Now,
+                Host = _host.HostName,
+                Status = (int) status == _host.StatusCode ? status.ToString() : $"Error! (Expected result: {_host.StatusCode})",
+                StatusCode = (int)status,
+                StatusChanged = _statusChanged
+            };
         }
 
-        private async Task<HttpStatusCode> CheckStatusAsync(string host)
+        private async Task<HttpStatusCode> CheckStatusAsync(string host, CancellationToken token)
         {
-            _httpRequestMessage.Method = HttpMethod.Head;
-            _httpRequestMessage.RequestUri = new Uri("http://" + host);
-
             try
             {
-                var result = await _httpClient.SendAsync(_httpRequestMessage);
+                _httpRequestMessage.Method = HttpMethod.Head;
+                _httpRequestMessage.RequestUri = new Uri("http://" + host);
+
+                await Task.Delay(_host.Period * 1000, token);
+                
+                if (token.IsCancellationRequested)
+                {
+                    _logger.Log("HttpPinger:CheckStatusAsync method canceled!");
+                    throw new OperationCanceledException(token);
+                }
+
+                var result = await _httpClient.SendAsync(_httpRequestMessage, token);
                 _newStatus = (int) result.StatusCode;
 
                 if (_newStatus != _oldStatus)
@@ -57,16 +69,14 @@ namespace PingerLib.Domain
                     _oldStatus = _newStatus;
                 }
                 else
-                {
                     _statusChanged = false;
-                }
 
                 return result.StatusCode;
             }
             catch (Exception ex)
             {
-                ErrorOccured?.Invoke(ex.Message);
-                return HttpStatusCode.BadRequest;
+                _logger.Log(ex.Message);
+                throw;
             }
             finally
             {

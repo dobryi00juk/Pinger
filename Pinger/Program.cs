@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
+using PingerLib.Configuration.Rules;
 using PingerLib.Domain;
 using PingerLib.Interfaces;
 
@@ -17,6 +20,8 @@ namespace Pinger
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("Press <enter> to stop");
+
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
             var settings = serviceProvider.GetService<Settings>();
@@ -24,8 +29,6 @@ namespace Pinger
 
             if (!settings.ValidationResult.IsValid)
                 return;
-            
-            Console.WriteLine("Press <enter> to stop");
 
             var app = serviceProvider.GetService<App>();
             app.Start(settings.HostList, cts);
@@ -40,19 +43,19 @@ namespace Pinger
         {
             var configuration = LoadConfiguration();
             var serviceCollection = new ServiceCollection();
+            
             serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddSingleton<List<Host>>();
+            serviceCollection.AddTransient<Host>();
+            serviceCollection.AddTransient<HttpHost>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddScoped<HttpClient>();
             serviceCollection.AddTransient<Ping>();
-            serviceCollection.AddTransient<TcpPinger>();
-            serviceCollection.AddTransient<HttpPinger>();
-            serviceCollection.AddTransient<IcmpPinger>();
             serviceCollection.AddTransient<PingReply>();
             serviceCollection.AddSingleton<App>();
             serviceCollection.AddTransient<ILogger, Logger>();
             serviceCollection.AddSingleton<Settings>();
-            serviceCollection.AddScoped<SettingsRules>();
+            serviceCollection.AddScoped<HttpHostSettingsRules>();
+            serviceCollection.AddScoped<HostSettingsRules>();
 
             return serviceCollection;
         }
@@ -66,4 +69,6 @@ namespace Pinger
             return configuration.Build();
         }
     }
+
+
 }

@@ -6,24 +6,17 @@ namespace PingerLib.Domain
 {
     public class Logger : ILogger
     {
-        public void LogToConsole(string message)
+        private readonly object _locker;
+        public Logger()
+        {
+            _locker = new object();
+        }
+        
+        public void Log(string message)
         {
             Console.WriteLine(message);
-        }
 
-        public void LogToFile(string message)
-        {
-            lock (this)
-            {
-                using var writer = File.AppendText("log.txt");
-                writer.WriteLine($"{message}");
-            }
-        }
-
-        public void LogToFileAndConsole(string message)
-        {
-            Console.WriteLine(message);
-            lock (this)
+            lock (_locker)
             {
                 using var writer = File.AppendText("log.txt");
                 writer.WriteLine($"{message}");
