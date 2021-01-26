@@ -16,19 +16,25 @@ namespace PingerLib.Tests.Domain
         private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
-            new Host {HostName = "google.com", Period = 1, Protocol = "http"},
-            new HttpHost() {HostName = "ya.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
+            new Host {HostName = "google.com", Period = 1, Protocol = "icmp"},
+            new HttpHost() {HostName = "ya.ru", Period = 2, Protocol = "http", StatusCode = 200},
         };
 
         [Fact]
-        public async Task<PingResult> IcmpPingTest()
+        public async Task IcmpPingTest()
         {
             //Arrange
+            var ping = new Ping();
+            var logger = new Logger();
+            var icmpPinger = new IcmpPinger(ping, _hosts[1] as Host, logger);
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
 
             //Act
+            var result = await icmpPinger.GetStatusAsync(token);
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => icmpPinger.GetStatusAsync(null, 2, ct));
+            Assert.Equal(typeof(PingResult), result.GetType());
         }
 
         [Fact]

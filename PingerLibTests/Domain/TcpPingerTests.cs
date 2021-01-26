@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Domain;
@@ -9,7 +10,7 @@ namespace PingerLib.Tests.Domain
 {
     public class TcpPingerTests
     {
-        private readonly List<Host> _hosts = new List<Host>
+        private readonly List<Host> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "google.com", Period = 1, Protocol = "http"},
@@ -19,34 +20,22 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            //Arrange
-            var th = new TestHelper();
-            var configuration = th.LoadConfiguration();
-            
-            var setting = new Settings(configuration, _hosts, new SettingsRules(), new Logger());
-            var tcpPinger = new TcpPinger(new Logger());
+            var logger = new Logger();
+            var tcpPinger = new TcpPinger(_hosts[0], logger);
+            var token = new CancellationToken();
 
-            //Act
+            var result = await tcpPinger.GetStatusAsync(token);
 
-            //Assert
-
-            //Task.Run(() => tcpPinger.GetStatusAsync("www.microsoft.com", 1)).GetAwaiter().GetResult();
-            //await tcpPinger.GetStatusAsync("www.microsoft.com", 1);
-            //await Assert.ThrowsAsync<ArgumentNullException>(() => tcpPinger.GetStatusAsync(null, 1));
+            Assert.Equal(typeof(PingResult), result.GetType());
         }
 
         [Fact]
         public void ConstructorTest()
         {
-            //Arrange
-            var th = new TestHelper();
-            var configuration = th.LoadConfiguration();
-            var setting = new Settings(configuration, _hosts, new SettingsRules(), new Logger());
+            var logger = new Logger();
 
-            //Act
-
-            //Assert
-            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], null));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null, logger));
         }
     }
 }

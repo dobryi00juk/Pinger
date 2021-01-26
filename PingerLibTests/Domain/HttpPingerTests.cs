@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Domain;
 using PingerLib.Interfaces;
+using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace PingerLib.Tests.Domain
@@ -16,21 +17,30 @@ namespace PingerLib.Tests.Domain
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "google.com", Period = 1, Protocol = "http"},
-            new HttpHost {HostName = "ya.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
+            new HttpHost {HostName = "http://www.google.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
         };
 
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            HttpClient httpClient = new ();
-            HttpRequestMessage httpRequestMessage = new ();
-            Logger logger = new();
-            var httpPinger = new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, logger);
+            var token = new CancellationToken();
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.When(HttpMethod.Head, _hosts[2].HostName)
+                    .Respond("application/json", "{'name' : 'TesMcGee'}");
 
-            var result = await httpPinger.GetStatusAsync(default);
+            var client = mockHttp.ToHttpClient();
+            var response = await client.GetAsync(_hosts[2].HostName, token);
+            var json = await response.Content.ReadAsStringAsync(token);
 
-            Assert.NotNull(result);
-            Assert.Equal(typeof(PingResult), result.GetType());
+
+            //HttpClient httpClient = new ();
+            //HttpRequestMessage httpRequestMessage = new ();
+            //Logger logger = new();
+            //var httpPinger = new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, logger);
+            //var result = await httpPinger.GetStatusAsync(default);
+
+            Assert.NotNull(json);
+            Assert.Equal(typeof(string), json.GetType());
         }
 
         [Fact]
