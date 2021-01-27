@@ -11,14 +11,16 @@ namespace PingerLib.Domain
     {
         private readonly Host _host;
         private readonly ILogger _logger;
+        private readonly TcpClient _tcpClient;
         private bool _statusChanged;
         private string _newStatus;
         private string _oldStatus;
 
-        public TcpPinger(Host host, ILogger logger)
+        public TcpPinger(Host host, ILogger logger, TcpClient tcpClient)
         {
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
         }
         public async Task<PingResult> GetStatusAsync(CancellationToken token)
         {
@@ -50,8 +52,8 @@ namespace PingerLib.Domain
                     throw new OperationCanceledException(token);
                 }
 
-                await tcpClient.ConnectAsync(host, 80);
-                _newStatus = tcpClient.Connected ? "Success" : "Fail";
+                await _tcpClient.ConnectAsync(host, 80);
+                _newStatus = _tcpClient.Connected ? "Success" : "Fail";
 
                 if (_newStatus != _oldStatus)
                 {
@@ -60,6 +62,8 @@ namespace PingerLib.Domain
                 }
                 else
                     _statusChanged = false;
+
+                _tcpClient.Close();
 
                 return _newStatus;
             }

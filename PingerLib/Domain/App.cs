@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,7 +78,7 @@ namespace PingerLib.Domain
             {
                 "icmp" => new IcmpPinger(_serviceProvider.GetService<Ping>(), (Host) host, _logger),                                                               
                 
-                "tcp" => new TcpPinger((Host) host, _logger),                                                                                                      
+                "tcp" => new TcpPinger((Host) host, _logger, new TcpClient(host.HostName, 80)),                                                                                                      
                 
                 "http" => new HttpPinger(
                     _serviceProvider.GetService<HttpClient>(), 

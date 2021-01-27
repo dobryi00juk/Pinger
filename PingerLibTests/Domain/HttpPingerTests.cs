@@ -1,18 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
+using Moq.Protected;
 using PingerLib.Configuration;
 using PingerLib.Domain;
 using PingerLib.Interfaces;
 using RichardSzalay.MockHttp;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace PingerLib.Tests.Domain
 {
     public class HttpPingerTests
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
         private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
@@ -20,27 +26,41 @@ namespace PingerLib.Tests.Domain
             new HttpHost {HostName = "http://www.google.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
         };
 
+        public HttpPingerTests(ITestOutputHelper testOutputHelper)
+        {
+            _testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
             var token = new CancellationToken();
-            var mockHttp = new MockHttpMessageHandler();
-            mockHttp.When(HttpMethod.Head, _hosts[2].HostName)
-                    .Respond("application/json", "{'name' : 'TesMcGee'}");
+            var handlerMock = new Mock<HttpMessageHandler>();
+            var response = new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.Locked,
+            };
+            
+            handlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(response);
+            
+            var httpClient = new HttpClient(handlerMock.Object);
+            var httpPinger = new HttpPinger(httpClient, new HttpRequestMessage(), _hosts[2] as HttpHost, new Logger());
+            var result = await httpPinger.GetStatusAsync(token);
+            
+            handlerMock.Protected().Verify(
+                "SendAsync",
+                Times.Exactly(1),
+                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Head),
+                ItExpr.IsAny<CancellationToken>());
 
-            var client = mockHttp.ToHttpClient();
-            var response = await client.GetAsync(_hosts[2].HostName, token);
-            var json = await response.Content.ReadAsStringAsync(token);
-
-
-            //HttpClient httpClient = new ();
-            //HttpRequestMessage httpRequestMessage = new ();
-            //Logger logger = new();
-            //var httpPinger = new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, logger);
-            //var result = await httpPinger.GetStatusAsync(default);
-
-            Assert.NotNull(json);
-            Assert.Equal(typeof(string), json.GetType());
+            Assert.NotNull(result);
+            Assert.Equal(typeof(PingResult), result.GetType());
         }
 
         [Fact]

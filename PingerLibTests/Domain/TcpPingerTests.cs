@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
+using Moq.Protected;
 using PingerLib.Configuration;
 using PingerLib.Domain;
 using Xunit;
@@ -20,13 +25,6 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
-            var logger = new Logger();
-            var tcpPinger = new TcpPinger(_hosts[0], logger);
-            var token = new CancellationToken();
-
-            var result = await tcpPinger.GetStatusAsync(token);
-
-            Assert.Equal(typeof(PingResult), result.GetType());
         }
 
         [Fact]
@@ -34,8 +32,9 @@ namespace PingerLib.Tests.Domain
         {
             var logger = new Logger();
 
-            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], null));
-            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null, logger));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], null, new TcpClient()));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null, logger, new TcpClient()));
+            //todo
         }
     }
 }
