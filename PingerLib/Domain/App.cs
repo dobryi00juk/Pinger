@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
+using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {
@@ -49,9 +50,9 @@ namespace PingerLib.Domain
 
                 while (true)
                 {
-                    var result = await pinger.GetStatusAsync(token);
-
-                    if (result.StatusChanged)
+                    var result  = await pinger.GetStatusAsync(token);
+                    
+                    if(result.StatusChanged)
                         _logger.Log(CreateResponseMessage(result));
                 }
             }
@@ -65,6 +66,7 @@ namespace PingerLib.Domain
             }
         }
 
+
         private static string CreateResponseMessage(PingResult result)
         {
             var message = $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status}" ;
@@ -76,9 +78,9 @@ namespace PingerLib.Domain
         {
             return host.Protocol switch
             {
-                "icmp" => new IcmpPinger(_serviceProvider.GetService<Ping>(), (Host) host, _logger),                                                               
+                "icmp" => new IcmpPinger((Host) host, _logger, _serviceProvider.GetService<IPingWrapper>()),                                                               
                 
-                "tcp" => new TcpPinger((Host) host, _logger, new TcpClient(host.HostName, 80)),                                                                                                      
+                "tcp" => new TcpPinger((Host) host, _logger, _serviceProvider.GetService<ITcpClientWrapper>()),                                                                                                      
                 
                 "http" => new HttpPinger(
                     _serviceProvider.GetService<HttpClient>(), 

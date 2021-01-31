@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using FluentValidation;
 
 namespace PingerLib.Configuration.Rules

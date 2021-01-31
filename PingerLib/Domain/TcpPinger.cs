@@ -3,7 +3,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
+using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {
@@ -11,23 +13,24 @@ namespace PingerLib.Domain
     {
         private readonly Host _host;
         private readonly ILogger _logger;
-        private readonly TcpClient _tcpClient;
+        private readonly ITcpClientWrapper _tcpClientWrapper;
         private bool _statusChanged;
         private string _newStatus;
         private string _oldStatus;
 
-        public TcpPinger(Host host, ILogger logger, TcpClient tcpClient)
+        public TcpPinger(Host host, ILogger logger, ITcpClientWrapper tcpClientWrapper)
         {
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
+            _tcpClientWrapper = tcpClientWrapper ?? throw new ArgumentNullException(nameof(tcpClientWrapper));
         }
+
         public async Task<PingResult> GetStatusAsync(CancellationToken token)
         {
             if(token.IsCancellationRequested)
                 _logger.Log("Tcp:GetStatusAsync method canceled");
-            
-            var status = await CheckStatusAsync(_host.HostName, token);
+
+            var status = await CheckStatusAsync(token);
 
             return new PingResult
             {
@@ -39,11 +42,10 @@ namespace PingerLib.Domain
             };
         }
 
-        private async Task<string> CheckStatusAsync(string host, CancellationToken token)
+        private async Task<string> CheckStatusAsync(CancellationToken token)
         {
             await Task.Delay(_host.Period * 1000, token);
-
-            using var tcpClient = new TcpClient();
+            
             try
             {
                 if (token.IsCancellationRequested)
@@ -52,8 +54,9 @@ namespace PingerLib.Domain
                     throw new OperationCanceledException(token);
                 }
 
-                await _tcpClient.ConnectAsync(host, 80);
-                _newStatus = _tcpClient.Connected ? "Success" : "Fail";
+                using var tcpClientWrapper = new TcpClientWrapper();
+                await _tcpClientWrapper.ConnectAsync(_host.HostName, 80);
+                _newStatus = _tcpClientWrapper.Connected ? "Success" : "Fail";
 
                 if (_newStatus != _oldStatus)
                 {
@@ -62,8 +65,6 @@ namespace PingerLib.Domain
                 }
                 else
                     _statusChanged = false;
-
-                _tcpClient.Close();
 
                 return _newStatus;
             }
@@ -74,7 +75,7 @@ namespace PingerLib.Domain
             }
             finally
             {
-                tcpClient.Close();
+                _tcpClientWrapper.Close();
             }
         }
     }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {

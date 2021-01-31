@@ -1,33 +1,36 @@
 ﻿using System;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
+using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {
     public class IcmpPinger : IPinger
     {
-        private readonly Ping _ping;
         private readonly Host _host;
         private readonly ILogger _logger;
+        private readonly IPingWrapper _pingWrapper;
         private bool _statusChanged;
         public IPStatus Status;
         private int _oldStatus = -2;
         private int _newStatus;
 
-        public IcmpPinger(Ping ping, Host host, ILogger logger)
+        public IcmpPinger(Host host, ILogger logger, IPingWrapper pingWrapper)
         {
             Status = IPStatus.Unknown;
-            _ping = ping ?? throw new ArgumentNullException(nameof(ping));
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _pingWrapper = pingWrapper;
         }
 
         public async Task<PingResult> GetStatusAsync(CancellationToken token)
         {
-            var status = await CheckStatusAsync(_host.HostName, token);
+            var status = await CheckStatusAsync(token);
 
             if (token.IsCancellationRequested)
                 _logger.Log("IcmpPinger:GetStatusAsync method canceled");
@@ -43,7 +46,7 @@ namespace PingerLib.Domain
             };
         }
 
-        private async Task<IPStatus> CheckStatusAsync(string host, CancellationToken token)
+        private async Task<IPStatus> CheckStatusAsync(CancellationToken token)
         {
             try
             {
@@ -55,8 +58,8 @@ namespace PingerLib.Domain
                     throw new OperationCanceledException(token);
                 }
 
-                var result = await _ping.SendPingAsync(host, 10000);
-                _newStatus = (int) result.Status;
+                var result = _pingWrapper.SendPingAsync(_host.HostName, 10000).Result;
+                _newStatus = (int)result;
 
                 if (_newStatus != _oldStatus)
                 {
@@ -66,7 +69,7 @@ namespace PingerLib.Domain
                 else
                     _statusChanged = false;
 
-                return result.Status;
+                return result;
             }
             catch (Exception ex)
             {

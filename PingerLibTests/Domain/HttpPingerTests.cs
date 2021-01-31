@@ -9,7 +9,6 @@ using Moq.Protected;
 using PingerLib.Configuration;
 using PingerLib.Domain;
 using PingerLib.Interfaces;
-using RichardSzalay.MockHttp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,19 +16,12 @@ namespace PingerLib.Tests.Domain
 {
     public class HttpPingerTests
     {
-        private readonly ITestOutputHelper _testOutputHelper;
-
         private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "google.com", Period = 1, Protocol = "http"},
             new HttpHost {HostName = "http://www.google.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
         };
-
-        public HttpPingerTests(ITestOutputHelper testOutputHelper)
-        {
-            _testOutputHelper = testOutputHelper;
-        }
 
         [Fact]
         public async Task CheckStatusAsyncTest()

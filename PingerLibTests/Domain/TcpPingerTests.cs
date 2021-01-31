@@ -9,7 +9,12 @@ using Moq;
 using Moq.Protected;
 using PingerLib.Configuration;
 using PingerLib.Domain;
+using PingerLib.Domain.Wrappers;
+using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 using Xunit;
+using Xunit.Abstractions;
+
 
 namespace PingerLib.Tests.Domain
 {
@@ -25,6 +30,19 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public async Task CheckStatusAsyncTest()
         {
+            var token = new CancellationToken();
+            var logger = new Logger();
+            var tcpClientMock = new Mock<ITcpClientWrapper>();
+            tcpClientMock.Setup(x => x.ConnectAsync("123", 80))
+                .Returns(Task.FromResult(default(object)));
+            tcpClientMock.Setup(x => x.Connected)
+                .Returns(true);
+
+            var tcpPinger = new TcpPinger(_hosts[0], logger, tcpClientMock.Object);
+            var result = await tcpPinger.GetStatusAsync(token);
+            
+            Assert.Equal(typeof(PingResult), result.GetType());
+            Assert.Equal("Success", result.Status);
         }
 
         [Fact]
@@ -32,9 +50,9 @@ namespace PingerLib.Tests.Domain
         {
             var logger = new Logger();
 
-            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], null, new TcpClient()));
-            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null, logger, new TcpClient()));
-            //todo
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], null, new TcpClientWrapper()));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(null, logger, new TcpClientWrapper()));
+            Assert.Throws<ArgumentNullException>(() => new TcpPinger(_hosts[0], logger, null));
         }
     }
 }

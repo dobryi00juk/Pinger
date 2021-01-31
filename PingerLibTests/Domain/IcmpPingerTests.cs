@@ -4,10 +4,14 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
 using PingerLib.Configuration;
 using PingerLib.Domain;
+using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
+using PingerLib.Interfaces.Wrappers;
 using Xunit;
+using PingReply = System.Net.NetworkInformation.PingReply;
 
 namespace PingerLib.Tests.Domain
 {
@@ -26,15 +30,22 @@ namespace PingerLib.Tests.Domain
             //Arrange
             var ping = new Ping();
             var logger = new Logger();
-            var icmpPinger = new IcmpPinger(ping, _hosts[1] as Host, logger);
             var cts = new CancellationTokenSource();
             var token = cts.Token;
-
+            //var pingReply = new PingerLib.Domain.Wrappers.PingReplyWrapper();
+            
+            var mockPingWrapper = new Mock<IPingWrapper>();
+            mockPingWrapper.Setup(x => x.SendPingAsync("123", 2))
+                .ReturnsAsync(IPStatus.BadRoute);
+            
             //Act
-            var result = await icmpPinger.GetStatusAsync(token);
+            var pinger = new IcmpPinger(_hosts[1] as Host, logger, mockPingWrapper.Object);
+            var result = await pinger.GetStatusAsync(token);
 
             //Assert
-            Assert.Equal(typeof(PingResult), result.GetType());
+            Assert.Equal(result.Status, IPStatus.BadRoute.ToString());
+            Assert.Equal(IPStatus.BadRoute.ToString(), result.Status);
+            Assert.Equal((int)IPStatus.BadRoute, result.StatusCode);
         }
 
         [Fact]
@@ -43,9 +54,9 @@ namespace PingerLib.Tests.Domain
             var ping = new Ping();
             var logger = new Logger();
 
-            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(null, _hosts[0] as Host, logger));
-            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(ping, null, logger));
-            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(ping, _hosts[1] as Host, null));
+            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(_hosts[0] as Host, logger, null));
+            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(null, logger, new PingWrapper()));
+            Assert.Throws<ArgumentNullException>(() => new IcmpPinger(_hosts[0] as Host, null, new PingWrapper()));
         }
     }
 }
