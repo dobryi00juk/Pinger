@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Domain;
-using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Interfaces
 {
@@ -9,6 +8,4 @@ namespace PingerLib.Interfaces
     {
         Task<PingResult> GetStatusAsync(CancellationToken cts);
     }
-
-    
 }

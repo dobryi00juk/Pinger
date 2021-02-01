@@ -19,11 +19,16 @@ namespace PingerLib.Configuration
         private readonly IEnumerable<Host> _hosts = new List<Host>();
         private readonly IEnumerable<HttpHost> _httpHosts= new List<HttpHost>();
 
-        public Settings(IConfiguration configuration, HttpHostSettingsRules httpHostRules, HostSettingsRules hostRules, ILogger logger)
+        public Settings(
+            IConfiguration configuration,
+            HttpHostSettingsRules httpHostRules, 
+            HostSettingsRules hostRules, 
+            ILogger logger)
         {
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _httpHostRules = httpHostRules ?? throw new ArgumentException(nameof(httpHostRules));
-            _hostRules = hostRules ?? throw new ArgumentException(nameof(hostRules));
+            _httpHostRules = httpHostRules ?? throw new ArgumentNullException(nameof(httpHostRules));
+            _hostRules = hostRules ?? throw new ArgumentNullException(nameof(hostRules));
 
             configuration.GetSection("Hosts")
                 .Bind(_hosts, c => c.BindNonPublicProperties = true);

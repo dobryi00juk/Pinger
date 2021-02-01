@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
 using PingerLib.Interfaces;
-using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {
@@ -40,7 +39,9 @@ namespace PingerLib.Domain
                 Protocol = "http",
                 Date = DateTime.Now,
                 Host = _host.HostName,
-                Status = (int) status == _host.StatusCode ? status.ToString() : $"Error! (Expected result: {_host.StatusCode})",
+                Status = (int) status == _host.StatusCode 
+                    ? status.ToString() 
+                    : $"Error! (Expected status code: {_host.StatusCode})",
                 StatusCode = (int)status,
                 StatusChanged = _statusChanged
             };

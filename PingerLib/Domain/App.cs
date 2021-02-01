@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
-using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
 using PingerLib.Interfaces.Wrappers;
 
@@ -66,12 +64,11 @@ namespace PingerLib.Domain
             }
         }
 
-
         private static string CreateResponseMessage(PingResult result)
         {
-            var message = $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status}" ;
-
-            return message;
+            return result.StatusCode == null
+                ? (_ = $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status}")
+                : $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status} | Status code: {result.StatusCode}";
         }
 
         private IPinger CreatePinger(IHost host)

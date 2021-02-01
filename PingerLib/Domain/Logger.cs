@@ -1,25 +1,20 @@
-﻿using System;
+﻿using PingerLib.Interfaces;
+using System;
 using System.IO;
-using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
 {
     public class Logger : ILogger
     {
-        private readonly object _locker;
-        public Logger()
-        {
-            _locker = new object();
-        }
-        
+        private readonly object _locker = new object();
+
         public void Log(string message)
         {
-            Console.WriteLine(message);
-
-            lock (_locker)
+            lock(_locker)
             {
-                using var writer = File.AppendText("log.txt");
-                writer.WriteLine($"{message}");
+                using var write = File.AppendText("log.txt");
+                write.WriteLine($"{message}");
+                Console.WriteLine(message);
             }
         }
     }

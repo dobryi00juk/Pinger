@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +10,6 @@ using PingerLib.Domain;
 using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
 using PingerLib.Interfaces.Wrappers;
-
 
 namespace Pinger
 {
@@ -35,20 +32,22 @@ namespace Pinger
 
             if (Console.ReadKey().Key == ConsoleKey.Enter)
                 cts.Cancel();
+
+            Console.ReadKey();
         }
     
         private static IServiceCollection ConfigureServices()
         {
             var configuration = LoadConfiguration();
             var serviceCollection = new ServiceCollection();
-            
+
             serviceCollection.AddSingleton(configuration);
             serviceCollection.AddTransient<HttpHost>();
             serviceCollection.AddTransient<Host>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddTransient<HttpClient>();
             serviceCollection.AddSingleton<App>();
-            serviceCollection.AddTransient<ILogger, Logger>();
+            serviceCollection.AddSingleton<ILogger, Logger>();
             serviceCollection.AddTransient<ITcpClientWrapper, TcpClientWrapper>();
             serviceCollection.AddTransient<IPingWrapper, PingWrapper>();
             serviceCollection.AddSingleton<Settings>();
@@ -67,6 +66,4 @@ namespace Pinger
             return configuration.Build();
         }
     }
-
-
 }

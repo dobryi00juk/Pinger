@@ -10,18 +10,27 @@ using PingerLib.Configuration;
 using PingerLib.Domain;
 using PingerLib.Interfaces;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace PingerLib.Tests.Domain
 {
     public class HttpPingerTests
     {
+        private readonly ILogger _logger;
+        private readonly HttpClient _httpClient;
+        private readonly HttpRequestMessage _httpRequestMessage;
         private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "google.com", Period = 1, Protocol = "http"},
             new HttpHost {HostName = "http://www.google.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
         };
+
+        public HttpPingerTests()
+        {
+            _logger = new Logger();
+            _httpClient = new HttpClient();
+            _httpRequestMessage = new HttpRequestMessage();
+        }
 
         [Fact]
         public async Task CheckStatusAsyncTest()
@@ -42,7 +51,7 @@ namespace PingerLib.Tests.Domain
                 .ReturnsAsync(response);
             
             var httpClient = new HttpClient(handlerMock.Object);
-            var httpPinger = new HttpPinger(httpClient, new HttpRequestMessage(), _hosts[2] as HttpHost, new Logger());
+            var httpPinger = new HttpPinger(httpClient, _httpRequestMessage, _hosts[2] as HttpHost, _logger);
             var result = await httpPinger.GetStatusAsync(token);
             
             handlerMock.Protected().Verify(
@@ -58,14 +67,10 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public void ConstructorTest()
         {
-            var logger = new Logger();
-            var httpClient = new HttpClient();
-            var httpRequestMessage = new HttpRequestMessage();
-
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, httpRequestMessage, _hosts[2] as HttpHost, logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, null, _hosts[2] as HttpHost, logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, null, logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(httpClient, httpRequestMessage, _hosts[2] as HttpHost, null));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, _httpRequestMessage, _hosts[2] as HttpHost, _logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, null, _hosts[2] as HttpHost, _logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, _httpRequestMessage, null, _logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, _httpRequestMessage, _hosts[2] as HttpHost, null));
         }
     }
 }

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using PingerLib.Configuration;
-using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
 using PingerLib.Interfaces.Wrappers;
 
@@ -25,7 +23,7 @@ namespace PingerLib.Domain
             Status = IPStatus.Unknown;
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _pingWrapper = pingWrapper;
+            _pingWrapper = pingWrapper ?? throw new ArgumentNullException(nameof(pingWrapper));
         }
 
         public async Task<PingResult> GetStatusAsync(CancellationToken token)
@@ -41,7 +39,6 @@ namespace PingerLib.Domain
                 Date = DateTime.Now,
                 Host = _host.HostName,
                 Status = status.ToString(),
-                StatusCode = (int)status,
                 StatusChanged = _statusChanged
             };
         }
@@ -58,9 +55,9 @@ namespace PingerLib.Domain
                     throw new OperationCanceledException(token);
                 }
 
-                var result = _pingWrapper.SendPingAsync(_host.HostName, 10000).Result;
+                var result = await _pingWrapper.SendPingAsync(_host.HostName, 5000);
                 _newStatus = (int)result;
-
+                 
                 if (_newStatus != _oldStatus)
                 {
                     _statusChanged = true;
