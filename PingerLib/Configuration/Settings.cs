@@ -3,40 +3,26 @@ using Microsoft.Extensions.Configuration;
 using PingerLib.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PingerLib.Configuration.Rules;
 
 namespace PingerLib.Configuration
 {
-    public class Settings 
+    public class Settings : ISettings
     {
-        public IEnumerable<IHost> HostList { get; set; }
+        public IEnumerable<IHost> HostList { get; set; } = new List<Host>();
         public ValidationResult ValidationResult { get; set; }
-
-        private readonly HttpHostSettingsRules _httpHostRules;
         private readonly HostSettingsRules _hostRules;
         private readonly ILogger _logger;
-        private readonly IEnumerable<Host> _hosts = new List<Host>();
-        private readonly IEnumerable<HttpHost> _httpHosts= new List<HttpHost>();
 
         public Settings(
             IConfiguration configuration,
-            HttpHostSettingsRules httpHostRules, 
             HostSettingsRules hostRules, 
             ILogger logger)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _httpHostRules = httpHostRules ?? throw new ArgumentNullException(nameof(httpHostRules));
             _hostRules = hostRules ?? throw new ArgumentNullException(nameof(hostRules));
 
-            configuration.GetSection("Hosts")
-                .Bind(_hosts, c => c.BindNonPublicProperties = true);
-                
-            configuration.GetSection("HttpHosts")
-                .Bind(_httpHosts, c => c.BindNonPublicProperties = true);
-
-            HostList = _hosts.Concat(_httpHosts);
+            configuration.GetSection("Hosts").Bind(HostList, c => c.BindNonPublicProperties = true);
 
             ValidationResult = Validate(HostList);
         }
@@ -47,10 +33,7 @@ namespace PingerLib.Configuration
 
             foreach (var item in hosts)
             {
-                if(item is HttpHost host)
-                    result = _httpHostRules.Validate(host);
-                else
-                    result = _hostRules.Validate(item as Host);
+                result = _hostRules.Validate(item as Host);
                 
                 if (result.IsValid)
                     continue;

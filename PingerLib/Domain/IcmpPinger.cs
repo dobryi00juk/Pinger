@@ -2,7 +2,6 @@
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
-using PingerLib.Configuration;
 using PingerLib.Interfaces;
 using PingerLib.Interfaces.Wrappers;
 
@@ -10,7 +9,7 @@ namespace PingerLib.Domain
 {
     public class IcmpPinger : IPinger
     {
-        private readonly Host _host;
+        private readonly IHost _host;
         private readonly ILogger _logger;
         private readonly IPingWrapper _pingWrapper;
         private bool _statusChanged;
@@ -18,7 +17,7 @@ namespace PingerLib.Domain
         private int _oldStatus = -2;
         private int _newStatus;
 
-        public IcmpPinger(Host host, ILogger logger, IPingWrapper pingWrapper)
+        public IcmpPinger(IHost host, ILogger logger, IPingWrapper pingWrapper)
         {
             Status = IPStatus.Unknown;
             _host = host ?? throw new ArgumentNullException(nameof(host));

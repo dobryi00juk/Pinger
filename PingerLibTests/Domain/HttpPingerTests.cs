@@ -21,8 +21,7 @@ namespace PingerLib.Tests.Domain
         private readonly List<IHost> _hosts = new()
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
-            new Host {HostName = "google.com", Period = 1, Protocol = "http"},
-            new HttpHost {HostName = "http://www.google.ru", Period = 2, Protocol = "icmp", StatusCode = 200},
+            new Host {HostName = "google.com", Period = 1, Protocol = "http", StatusCode = 200}
         };
 
         public HttpPingerTests()
@@ -51,7 +50,7 @@ namespace PingerLib.Tests.Domain
                 .ReturnsAsync(response);
             
             var httpClient = new HttpClient(handlerMock.Object);
-            var httpPinger = new HttpPinger(httpClient, _httpRequestMessage, _hosts[2] as HttpHost, _logger);
+            var httpPinger = new HttpPinger(httpClient, _httpRequestMessage, _hosts[1], _logger);
             var result = await httpPinger.GetStatusAsync(token);
             
             handlerMock.Protected().Verify(
@@ -67,10 +66,10 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public void ConstructorTest()
         {
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, _httpRequestMessage, _hosts[2] as HttpHost, _logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, null, _hosts[2] as HttpHost, _logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(null, _httpRequestMessage, _hosts[1], _logger));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, null, _hosts[1], _logger));
             Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, _httpRequestMessage, null, _logger));
-            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, _httpRequestMessage, _hosts[2] as HttpHost, null));
+            Assert.Throws<ArgumentNullException>(() => new HttpPinger(_httpClient, _httpRequestMessage, _hosts[1], null));
         }
     }
 }

@@ -5,7 +5,6 @@ using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
-using PingerLib.Configuration.Rules;
 using PingerLib.Domain;
 using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
@@ -21,7 +20,7 @@ namespace Pinger
 
             var services = ConfigureServices();
             var serviceProvider = services.BuildServiceProvider();
-            var settings = serviceProvider.GetService<Settings>();
+            var settings = serviceProvider.GetService<ISettings>();
             var cts = new CancellationTokenSource();
 
             if (!settings.ValidationResult.IsValid)
@@ -30,28 +29,26 @@ namespace Pinger
             var app = serviceProvider.GetService<App>();
             app.Start(settings.HostList, cts);
 
-            if (Console.ReadKey().Key == ConsoleKey.Enter)
-                cts.Cancel();
-
-            Console.ReadKey();
+            if (Console.ReadKey().Key != ConsoleKey.Enter) return;
+            cts.Cancel();
+            Console.WriteLine("All task is canceled");
         }
-    
+
         private static IServiceCollection ConfigureServices()
         {
             var configuration = LoadConfiguration();
             var serviceCollection = new ServiceCollection();
 
             serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddTransient<HttpHost>();
-            serviceCollection.AddTransient<Host>();
+            serviceCollection.AddSingleton<IHost, Host>();
             serviceCollection.AddTransient<HttpRequestMessage>();
             serviceCollection.AddTransient<HttpClient>();
             serviceCollection.AddSingleton<App>();
             serviceCollection.AddSingleton<ILogger, Logger>();
             serviceCollection.AddTransient<ITcpClientWrapper, TcpClientWrapper>();
             serviceCollection.AddTransient<IPingWrapper, PingWrapper>();
-            serviceCollection.AddSingleton<Settings>();
-            serviceCollection.AddScoped<HttpHostSettingsRules>();
+            serviceCollection.AddTransient<IPingerFactory, PingerFactory>();
+            serviceCollection.AddSingleton<ISettings, Settings>();
             serviceCollection.AddScoped<HostSettingsRules>();
 
             return serviceCollection;

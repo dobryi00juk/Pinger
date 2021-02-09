@@ -7,5 +7,6 @@ namespace PingerLib.Configuration
         public string HostName { get; set; }
         public string Protocol { get; set; }
         public int Period { get; set; }
+        public int? StatusCode { get; set; }
     }
 }

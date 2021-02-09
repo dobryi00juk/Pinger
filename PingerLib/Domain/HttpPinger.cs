@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using PingerLib.Configuration;
 using PingerLib.Interfaces;
 
 namespace PingerLib.Domain
@@ -12,14 +11,14 @@ namespace PingerLib.Domain
     public class HttpPinger : IPinger
     {
         private readonly HttpRequestMessage _httpRequestMessage;
-        private readonly HttpHost _host;
+        private readonly IHost _host;
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private bool _statusChanged;
         private int _oldStatus;
         private int _newStatus;
 
-        public HttpPinger(HttpClient httpClient, HttpRequestMessage httpRequestMessage, HttpHost host, ILogger logger)
+        public HttpPinger(HttpClient httpClient, HttpRequestMessage httpRequestMessage, IHost host, ILogger logger)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _httpRequestMessage = httpRequestMessage ?? throw new ArgumentNullException(nameof(httpRequestMessage));

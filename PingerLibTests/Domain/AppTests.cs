@@ -13,10 +13,12 @@ namespace PingerLib.Tests.Domain
         [Fact]
         public void StartTest()
         {
-            var mock = new Mock<IServiceProvider>();
-            var app = new App(mock.Object);
+            var mockServiceProvider = new Mock<IServiceProvider>();
+            var logger = new Logger();
             var hosts = new List<IHost>();
             var cts = new CancellationTokenSource();
+            var pingerFactory = new PingerFactory(mockServiceProvider.Object, logger);
+            var app = new App(pingerFactory, logger);
 
             Assert.Throws<ArgumentNullException>(() => app.Start(null, cts));
             Assert.Throws<ArgumentNullException>(() => app.Start(hosts, null));
