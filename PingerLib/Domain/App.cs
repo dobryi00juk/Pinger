@@ -1,41 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using PingerLib.Configuration;
 using PingerLib.Interfaces;
-using PingerLib.Interfaces.Wrappers;
 
 namespace PingerLib.Domain
 {
     public class App 
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IPingerFactory _pingerFactory;
         private readonly ILogger _logger;
 
-        public App(IServiceProvider serviceProvider)
+        public App(IPingerFactory pingerFactory, ILogger logger)
         {
-            _serviceProvider = serviceProvider;
-            _logger = _serviceProvider.GetService<ILogger>();
+            _pingerFactory = pingerFactory ?? throw new ArgumentNullException(nameof(pingerFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void Start(IEnumerable<IHost> hosts, CancellationTokenSource cts)
         {
-            if (hosts == null)
-                throw new ArgumentNullException(nameof(hosts));
-            if (cts == null)
-                throw new ArgumentNullException(nameof(cts));
+            if (hosts == null) throw new ArgumentNullException(nameof(hosts));
+            if (cts == null) throw new ArgumentNullException(nameof(cts));
 
             foreach (var host in hosts)
             {
-                var task = new Task(async () =>
-                {
-                    await Run(host, cts.Token);
-                });
-                task.Start();
+                if (cts.Token.IsCancellationRequested)
+                    return;
+            
+                ThreadPool.QueueUserWorkItem(CallBack, host);
             }
+        }
+
+        private void CallBack(object state)
+        {
+            var host = state as Host;
+            Run(host, new CancellationToken()).Wait();
         }
 
         private async Task Run(IHost host, CancellationToken token)
@@ -44,11 +44,11 @@ namespace PingerLib.Domain
 
             try
             {
-                pinger = CreatePinger(host);
+                pinger = _pingerFactory.CreatePinger(host);
 
                 while (true)
                 {
-                    var result  = await pinger.GetStatusAsync(token);
+                    var result = await pinger.GetStatusAsync(token);
                     
                     if(result.StatusChanged)
                         _logger.Log(CreateResponseMessage(result));
@@ -69,23 +69,6 @@ namespace PingerLib.Domain
             return result.StatusCode == null
                 ? (_ = $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status}")
                 : $"{result.Protocol} | {result.Date} | {result.Host} | {result.Status} | Status code: {result.StatusCode}";
-        }
-
-        private IPinger CreatePinger(IHost host)
-        {
-            return host.Protocol switch
-            {
-                "icmp" => new IcmpPinger((Host) host, _logger, _serviceProvider.GetService<IPingWrapper>()),                                                               
-                
-                "tcp" => new TcpPinger((Host) host, _logger, _serviceProvider.GetService<ITcpClientWrapper>()),                                                                                                      
-                
-                "http" => new HttpPinger(
-                    _serviceProvider.GetService<HttpClient>(), 
-                    _serviceProvider.GetService<HttpRequestMessage>(),
-                    (HttpHost) host, _logger),  
-                
-                _ => throw new ArgumentException("ProtocolType Error")
-            };
         }
     }
 }

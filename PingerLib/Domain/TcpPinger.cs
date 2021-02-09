@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using PingerLib.Configuration;
 using PingerLib.Domain.Wrappers;
 using PingerLib.Interfaces;
 using PingerLib.Interfaces.Wrappers;
@@ -10,14 +9,14 @@ namespace PingerLib.Domain
 {
     public class TcpPinger : IPinger
     {
-        private readonly Host _host;
+        private readonly IHost _host;
         private readonly ILogger _logger;
         private readonly ITcpClientWrapper _tcpClientWrapper;
         private bool _statusChanged;
         private string _newStatus;
         private string _oldStatus;
 
-        public TcpPinger(Host host, ILogger logger, ITcpClientWrapper tcpClientWrapper)
+        public TcpPinger(IHost host, ILogger logger, ITcpClientWrapper tcpClientWrapper)
         {
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

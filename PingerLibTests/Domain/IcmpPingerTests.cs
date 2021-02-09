@@ -22,7 +22,6 @@ namespace PingerLib.Tests.Domain
         {
             new Host {HostName = "www.microsoft.com", Period = 3, Protocol = "tcp"},
             new Host {HostName = "ya.com", Period = 1, Protocol = "icmp"},
-            new HttpHost {HostName = "ya.ru", Period = 2, Protocol = "http", StatusCode = 200},
         };
 
         public IcmpPingerTests()
